@@ -1,0 +1,45 @@
+# depslib dependency file v1.0
+1415430884 source:d:\project\c\camera\main.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	"camera.h"
+	"map.h"
+	"object.h"
+
+1415199636 d:\project\c\camera\camera.h
+	"map.h"
+	"object.h"
+
+1415430787 source:d:\project\c\camera\camera.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	"camera.h"
+
+1414491323 source:d:\project\c\camera\map.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	"map.h"
+
+1414487391 d:\project\c\camera\map.h
+
+1415430555 source:d:\project\c\camera\object.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"object.h"
+
+1415432198 d:\project\c\camera\object.h
+	"map.h"
+
