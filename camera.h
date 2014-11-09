@@ -4,10 +4,10 @@
 #define NODENUM 5   //节点数
 #define SLEEPT 10000  //延迟时长（微秒）
 /* 关系强度 */
-#define STRENGTHINIT 1.0   //初值
+#define STRENGTHINIT 1.5   //strength初值
 #define STRENGTHINCRE 1.0  //增量
 #define STRENGTHRATIO 0.1  //系数
-#define PVALUE 0.5  //公式参数概率ω
+#define PVALUE 0.1  //公式参数概率ω
 #define TVALUE 1.0  //公式参数阈值
 
 /* 消息、任务类型 */
@@ -52,5 +52,6 @@ typedef struct CameraThreadArgStruct
 
 int CameraInit( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJECTNUM]); //节点初始化函数
 void CameraControl( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJECTNUM], Object *obj );   //节点总控函数
+int count_communication(int flag);
 
 #endif // _CAMERA_H

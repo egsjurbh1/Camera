@@ -1,8 +1,11 @@
-/*
-*   运动目标
-*   lq
-*   update：141031
-*/
+/** \brief 运动目标
+ *
+ * \author lq
+ * \update 141109
+ * \return
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -19,6 +22,7 @@ static void MoveMode0Thread( void *arg );
 static void MoveMode1Thread( void *arg );
 static int find_next(int mapblock[][MAPY], int x, int y, MapCoo *nextco );
 static void waitdonothing( int timelength );
+static int moveto(int mapblock[][MAPY], Object *obj, MapCoo *nextco );
 
 /***************************************************************
 *目标初始化函数
@@ -26,7 +30,7 @@ static void waitdonothing( int timelength );
 int ObjectInit( Object *obj )
 {
     int i;
-    int objectcoo[OBJECTNUM][2] = {{1,1},{5,1}};  //初始化坐标
+    int objectcoo[OBJECTNUM][2] = {{3,1},{5,1}};  //初始化坐标
     int destcoo[OBJECTNUM][2] = {{5,1},{3,1}};  //目的地坐标
     float speed[2] = {0.5, 0.2};    //目标速度 单位：秒/格
 
@@ -39,7 +43,7 @@ int ObjectInit( Object *obj )
         obj[i].destcoo.y = destcoo[i][1];
         obj[i].objectid = OBJECTID + i;
         obj[i].speed = speed[0];
-        obj[i].mode = ACTIVEMODE;
+        obj[i].mode = PASSIVEMODE;   //PASSIVEMODE, ACTIVEMODE
         printf("目标%d 初始化成功。\n", obj[i].objectid );
     }
     return 0;
@@ -113,7 +117,7 @@ void ObjectMovement( int mapb[][MAPY], Object *obj, int configarg )
 }
 
 /*************************************
-*   目标运动线程1（节点在线主动随机寻路）
+*   目标运动线程1（主动随机寻路）
 *   输入：目标信息,起点,速度(n格/s)
 *
 *************************************/
@@ -219,11 +223,12 @@ static void waitdonothing( int timelength )
         time(&te);
         if( abs(te - tb) >= timelength )
             break;
+        sleep(1);
     }
 }
 
 /******************************
-*   目标运动线程0（离线寻路径，按路径引导节点）
+*   目标运动线程0（路径引导）
 *   输入：目标信息,起点,终点,速度(n格/s)
 *
 *****************************/
@@ -235,33 +240,29 @@ static void MoveMode0Thread( void *arg )
 
     MapCoo destco;
     float speed;
-    int i = 0;
-    MapCoo startco;
-    MapCoo route[20];
+    //路径
+    MapCoo route[10] = { {2,1},{1,1},{1,2},{1,1},{0,1},{1,1},{1,0},{1,1},{2,1},{3,1} };
+    int i;
     //参数引用
     psarg = (MoveArg *)arg;
     mapblock = psarg->mapblock;
     obj = psarg->obj;
     //目标坐标
-    startco.x = obj->coo.x;
-    startco.y = obj->coo.y;
+
     destco.x = obj->destcoo.x;
     destco.y = obj->destcoo.y;
     speed = obj->speed;
-    //寻找路径
-    find_path( mapblock, startco.x, startco.y, destco, route);
+
     //目标按路径从起点移动至终点
     printf("目标 %d 开始位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
-    while(1)
-    {
-        sleep(1);
-        if(route[i].x == ENDROUTE)
-            break;
-        waitdonothing(1/speed); //等待
-        ++i;
-        obj->coo.x = route[i].x;
-        obj->coo.y = route[i].y;
-        printf("目标 %d 位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
+
+    for( i = 0;; i++) {
+        if( i == 10)
+            i = 0;
+        if( moveto(mapblock, obj, &route[i] ) )
+            waitdonothing(1/speed); //等待
+        else
+            printf("不可通行！\n");
     }
 }
 
@@ -276,9 +277,9 @@ static int check_pos_valid(int mapblock[][MAPY], int x, int y)
     if(mapblock[x][y] == IMPASSABLE)
         return 0;
 
-    /* 当前节点是否已经走过 */
+    /* 当前节点是否已经走过
     if(gValue[x][y] == PASSED)
-        return 0;
+        return 0;*/
 
     return 1;
 }
@@ -321,4 +322,35 @@ static int find_path(int mapblock[][MAPY], int x, int y, MapCoo destco, MapCoo *
     route[i+1].x = ENDROUTE;
     route[i+1].y = ENDROUTE;
     return 0;
+}
+
+/** \brief Moveto定点移动
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+static int moveto(int mapblock[][MAPY], Object *obj, MapCoo *nextco )
+{
+    int x,y,ox,oy;
+    x = nextco->x;
+    y = nextco->y;
+    ox = obj->coo.x;
+    oy = obj->coo.y;
+    //相邻路径
+    if(( abs( x - ox ) <= 1 && y == oy ) || ( abs( y - oy) <= 1 && x == ox )) {
+        if( check_pos_valid(mapblock, x, y) ) {
+            //Move to nextco
+            obj->coo.x = x;
+            obj->coo.y = y;
+            printf("目标 %d 位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
+        }
+        else
+            return 0;
+    }
+    else
+        return 0;
+
+    return 1;
 }

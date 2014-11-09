@@ -1,8 +1,11 @@
-/*
-*   道路地图模拟
-*   lq
-*   update：141028
-*/
+/** \brief 道路地图模拟
+ *
+ * \author lq
+ * \update 141028
+ * \return
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -44,6 +47,7 @@ int RoadMapInit(int mapblock[][MAPY], Cross *cross)
         }
 
         ret = CrossConfig( mapblock, &cross[i] );
+        mapblock[4][1] = IMPASSABLE;    //测试封闭(4,1)区域
         switch(ret){
         case -2:
             printf("所设路口 %d 和地图已有路面有覆盖！\n",cross[i].roadid);

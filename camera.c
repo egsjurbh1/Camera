@@ -21,6 +21,7 @@ static void check_nodemsg( Node *node, int nmsg[][NODENUM] );
 static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJECTNUM] );
 static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJECTNUM], Object *obj );
 static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i);
+int count_communication(int flag);
 
 /***********************************************************
 *   摄像头节点初始化函数
@@ -30,7 +31,7 @@ int CameraInit( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJECTNUM
 {
     int i,j;
     int firstnodeid = NODEID;
-    const int nodecoo[NODENUM][2] = {{0,1},{1,0},{2,1},{1,2},{3,1}};//节点坐标
+    const int nodecoo[NODENUM][2] = {{3,1},{2,1},{1,2},{0,1},{1,0}};//节点坐标
 
     /* NodeMsg消息初始化 */
     for( i = 0; i < NODENUM; i++)
@@ -222,6 +223,7 @@ static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJE
                 {
                     m = node->StrackO[i][1] - NODEID;   //取之前源节点号对应的消息位置
                     nmsg[m][n] = FAILA;  //n节点发送消息给m节点
+                    count_communication(1);
                 }
                 //更新跟踪集
                 node->StrackO[i][0] = tmsg[n][i].objectid;
@@ -342,6 +344,7 @@ static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i)
             tmsg[j][i].nodeid = nodeid;
             tmsg[j][i].tasktype = TRACKTASK;
             tmsg[j][i].objectid = i + OBJECTID;
+            count_communication(1);
             printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
         }
         else {
@@ -353,9 +356,19 @@ static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i)
                 tmsg[j][i].nodeid = nodeid;
                 tmsg[j][i].tasktype = TRACKTASK;
                 tmsg[j][i].objectid = i + OBJECTID;
+                count_communication(1);
                 printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
             }
         }
     }
+}
+
+/*****通信次数统计*****/
+int count_communication(int flag)
+{
+    static int n = 0;
+    if(flag)
+        ++n;
+    return n;
 }
 

@@ -1,10 +1,11 @@
 /** \brief 摄像头网络目标跟踪仿真
  *
  * \author lq
- * \update 141105
- * \version v0.4.0
- *
+ * \update 141109
+ * \version v0.9.0
+ * \notice shutup firefox while running!
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -13,11 +14,13 @@
 #include "camera.h"
 #include "map.h"
 #include "object.h"
+#include "general.h"
 
 int main()
 {
     FILE *fp;
-    int i, j, ret;
+    int ret;
+
     /*MapBlock[i][j]存储地图坐标（i,j）*/
     volatile int MapBlock[MAPX][MAPY];    //类型 IMPASSABLE：不可通行；PASSABLE：可通行
     /*crossroad[i]存储交叉路口i信息*/
@@ -54,30 +57,20 @@ int main()
     /* 摄像头节点总控 */
     CameraControl( CameraNode, NodeMsg, TaskMsg, TrackObject );
     sleep(1);
+
     /* 目标运动总控 */
     ObjectMovement( MapBlock, TrackObject, EXECUTEACTION );
     sleep(1);
 
+    /* 输出结果总控 */
+    OutputControl( CameraNode );
+    sleep(1);
+
+    /* main主线程等待 */
     while(1)
     {
-        /**< 输出节点关系强度矩阵到文件*/
-        fp = fopen("nodestrength.txt", "w+");
-        for(i = 0; i < NODENUM; i++)
-        {
-            for(j = 0; j < NODENUM; j++)
-                fprintf(fp, "%.1f\t", CameraNode[i].rstrength[j]);
-            fprintf(fp, "\n");
-        }
-        fprintf(fp, "\n");
-        fclose(fp);
-        sleep(3);
+        sleep(1);
     }
 
     return 0;
 }
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 #ifndef _OBJECT_H
 #define _OBJECT_H
 
-#define OBJECTNUM 2 //目标数
+#define OBJECTNUM 1 //目标数
 #define OBJECTID 601 //目标起始编号
 #define NONEOID 0 //无编号
 
