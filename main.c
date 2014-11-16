@@ -1,8 +1,8 @@
 /** \brief 摄像头网络目标跟踪仿真
  *
  * \author lq
- * \update 141109
- * \version v0.9.0
+ * \update 141116
+ * \version v0.9.2
  * \notice shutup firefox while running!
  */
 
@@ -18,15 +18,13 @@
 
 int main()
 {
-    FILE *fp;
     int ret;
-
     /*MapBlock[i][j]存储地图坐标（i,j）*/
     volatile int MapBlock[MAPX][MAPY];    //类型 IMPASSABLE：不可通行；PASSABLE：可通行
     /*crossroad[i]存储交叉路口i信息*/
-    Cross CrossRoad[CROSSNUM];
-    Object TrackObject[OBJECTNUM];   //跟踪目标
-    Node CameraNode[NODENUM];  //摄像头节点
+    volatile Cross CrossRoad[CROSSNUM];
+    volatile Object TrackObject[OBJECTNUM];   //跟踪目标
+    volatile Node CameraNode[NODENUM];  //摄像头节点
     /*NodeMsg[i][j]存储节点j发给节点i的消息*/
     volatile int NodeMsg[NODENUM][NODENUM];   //消息类型 NONEACTION：无；SUCCESSA：移交成功；FAILA：非相邻节点；
     /*TaskMsg[i][j]存储节点i收到目标j的任务消息*/

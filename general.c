@@ -58,13 +58,14 @@ static void WriteOutfileThread(void *arg)
     fp[1] = fopen("communicost.txt", "w+");
     for( i = 0; i < 2; i++)
     {
-        fprintf(fp[i], "系统参数：\n");
-        fprintf(fp[i], "NodeNum:%d\t ObjectNum:%d\t\nStrength_Init:%.2f \tStrength_Inc:%.2f\t Strength_Ratio:%.2f\t"
-            "概率阈值:%.2f\t 消息概率:%.2f\t\n", NODENUM, OBJECTNUM, STRENGTHINIT, STRENGTHINCRE, STRENGTHRATIO, TVALUE, PVALUE);
-        fprintf(fp[i], "**************************************************\n");
+        fprintf(fp[i], "系统参数：\t\n");
+        fprintf(fp[i], "NodeNum:\t ObjectNum:\t Strength_Init:\t Strength_Inc:\t Strength_Ratio:\t"
+            "概率阈值:\t 消息概率:\t\n %d\t %d\t %.2f\t %.2f\t %.2f\t %.2f\t %.2f\t\n"
+            , NODENUM, OBJECTNUM, STRENGTHINIT, STRENGTHINCRE, STRENGTHRATIO, TVALUE, PVALUE);
+        fprintf(fp[i], "**************************************************\t\n");
         time(&old_it[i]);
         timei = localtime(&old_it[i]);
-        fprintf(fp[i], " %s\n", asctime(timei));   //当前时间
+        fprintf(fp[i], "%s\t\n", asctime(timei));   //当前时间
     }
     fprintf(fp[0], "关系强度矩阵\t\n");//标题
     fprintf(fp[1], "时间\t通信代价\t\n");//表标题
@@ -78,6 +79,7 @@ static void WriteOutfileThread(void *arg)
             old_it[0] = it;
             tn[0] += WRITECYCLE_STRENGTH;
             fprintf(fp[0], "%d\t\n", tn[0]);//时间序列
+            printf("Time:%d\t\n", tn[0]);
             for(i = 0; i < NODENUM; i++)
             {
                 for(j = 0; j < NODENUM; j++)

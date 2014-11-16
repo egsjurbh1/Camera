@@ -1,7 +1,7 @@
 /** \brief 运动目标
  *
  * \author lq
- * \update 141109
+ * \update 141116
  * \return
  *
  */
@@ -30,7 +30,7 @@ static int moveto(int mapblock[][MAPY], Object *obj, MapCoo *nextco );
 int ObjectInit( Object *obj )
 {
     int i;
-    int objectcoo[OBJECTNUM][2] = {{3,1},{5,1}};  //初始化坐标
+    int objectcoo[OBJECTNUM][2] = {{1,1},{2,1}};  //初始化坐标
     int destcoo[OBJECTNUM][2] = {{5,1},{3,1}};  //目的地坐标
     float speed[2] = {0.5, 0.2};    //目标速度 单位：秒/格
 
@@ -43,7 +43,7 @@ int ObjectInit( Object *obj )
         obj[i].destcoo.y = destcoo[i][1];
         obj[i].objectid = OBJECTID + i;
         obj[i].speed = speed[0];
-        obj[i].mode = PASSIVEMODE;   //PASSIVEMODE, ACTIVEMODE
+        obj[i].mode = ACTIVEMODE;   //PASSIVEMODE, ACTIVEMODE
         printf("目标%d 初始化成功。\n", obj[i].objectid );
     }
     return 0;
@@ -98,6 +98,7 @@ void ObjectMovement( int mapb[][MAPY], Object *obj, int configarg )
                 printf("Create MoveMode0Thread error!\n");
                 exit(1);
             }
+            sleep(1);
             printf("目标 %d 运动线程（模式:0：路径引导）创建。\n", obj[i].objectid );
             break;
         case ACTIVEMODE: //在线寻路模式
@@ -106,6 +107,7 @@ void ObjectMovement( int mapb[][MAPY], Object *obj, int configarg )
                 printf("Create MoveMode1Thread error!\n");
                 exit(1);
             }
+            sleep(1);
             printf("目标 %d 运动线程（模式1：随机寻路）创建。\n", obj[i].objectid );
             break;
         default:

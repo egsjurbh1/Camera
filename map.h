@@ -29,6 +29,6 @@ typedef struct CrossStruct
     MapCoo coo;
 }Cross;
 
-int RoadMapInit(int mapblock[][MAPY], Cross *cross); //道路地图初始化函数
+extern int RoadMapInit(int mapblock[][MAPY], Cross *cross); //道路地图初始化函数
 
 #endif // _MAP_H

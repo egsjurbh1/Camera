@@ -1,7 +1,7 @@
 /** \brief 摄像头节点
  *
  * \author lq
- * \update 141108
+ * \update 141116
  * \return
  *
  */
@@ -20,7 +20,7 @@ static void ObjcetDetectThread(void *arg); //节点目标检测线程
 static void check_nodemsg( Node *node, int nmsg[][NODENUM] );
 static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJECTNUM] );
 static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJECTNUM], Object *obj );
-static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i);
+static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i, int mode);
 int count_communication(int flag);
 
 /***********************************************************
@@ -106,6 +106,7 @@ void CameraControl( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJEC
             printf("Create NodeMsgThread %d error!\n", i);
             exit(1);
         }
+        sleep(1);
         printf("节点 %d NodeMsgThread线程创建。\n", node[i].nodeid );
         //NodeTaskThread线程
         ret = pthread_create(&nodetaskt[i], &attr, (void *)NodeTaskThread, &nodetaskarg[i]);
@@ -113,6 +114,7 @@ void CameraControl( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJEC
             printf("Create NodeTaskThread %d error!\n", i);
             exit(1);
         }
+        sleep(1);
         printf("节点 %d NodeTaskThread线程创建。\n", node[i].nodeid );
         //ObjcetDetectThread线程
         ret = pthread_create(&objectdectt[i], &attr, (void *)ObjcetDetectThread, &objectdectart[i]);
@@ -120,6 +122,7 @@ void CameraControl( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJEC
             printf("Create ObjcetDetectThread %d error!\n", i);
             exit(1);
         }
+        sleep(1);
         printf("节点 %d ObjcetDetectThread线程创建。\n", node[i].nodeid );
     }
     //release thread attribute
@@ -165,16 +168,16 @@ static void check_nodemsg( Node *node, int nmsg[][NODENUM] )
             /* 判断消息类型 */
             if(nmsg[n][i] == SUCCESSA) {
                 node->rstrength[i] += STRENGTHINCRE; //修改强度
-                printf("节点%d 对 节点%d 关系增强，%f\n",(NODEID+i), nodeid, node->rstrength[i]);
+                printf("节点%d 对 节点%d 关系增强，%.2f\n",(NODEID+i), nodeid, node->rstrength[i]);
             }
             else if(nmsg[n][i] == FAILA) {
                 node->rstrength[i] -= (STRENGTHINCRE * STRENGTHRATIO); //修改强度
-                printf("节点%d 对 节点%d 关系减弱，%f\n",(NODEID+i), nodeid, node->rstrength[i]);
+                printf("节点%d 对 节点%d 关系减弱，%.2f\n",(NODEID+i), nodeid, node->rstrength[i]);
             }
             nmsg[n][i] = NONEA;    //消息初始化
         }
         //usleep(SLEEPT);
-        //sleep(1);
+        sleep(1);
     }
 
 }
@@ -235,7 +238,7 @@ static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJE
             tmsg[n][i].tasktype = NONEA;
         }
         //usleep(SLEEPT);
-        //sleep(1);
+        sleep(1);
     }
 
 }
@@ -302,7 +305,7 @@ static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJEC
                         m = node->StrackO[i][1] - NODEID;
                         nmsg[m][n] = SUCCESSA;
                         /* 发布任务消息 */
-                        post_task( tmsg, node, i);
+                        post_task( tmsg, node, i, MULTICAST);   //mode:BROADCAST,MULTICAST
                     }
                     else    //首次检测到目标
                     {
@@ -310,7 +313,7 @@ static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJEC
                         node->SdetectO[i][0] = obj[i].objectid;
                         node->SdetectO[i][1] = nodeid;
                         /* 发布任务消息 */
-                        post_task( tmsg, node, i);
+                        post_task( tmsg, node, i, MULTICAST);
                     }
                 }
             }
@@ -322,12 +325,12 @@ static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJEC
             }
         }
         //usleep(SLEEPT);
-        //sleep(1);
+        sleep(1);
     }
 }
 
 /*****发布任务消息*****/
-static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i)
+static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i, int mode)
 {
     int j, n, nodeid, percent;
 
@@ -338,27 +341,41 @@ static void post_task( TaskInfo tmsg[][OBJECTNUM], Node *node, int i)
     {
         if( j == n)
             continue;
-        if( node->rstrength[j] >= TVALUE ) //大于阈值
-        {
-            /* 100%发送任务消息 */
-            tmsg[j][i].nodeid = nodeid;
-            tmsg[j][i].tasktype = TRACKTASK;
-            tmsg[j][i].objectid = i + OBJECTID;
-            count_communication(1);
-            printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
-        }
-        else {
-            /* 按概率发送任务消息 */
-            srand((unsigned)time(NULL));
-            percent = 1 / PVALUE;
-            if( 1 == rand() % percent)
+        switch(mode) {
+        case MULTICAST:
+            if( node->rstrength[j] >= TVALUE ) //大于阈值
             {
+                /* 100%发送任务消息 */
                 tmsg[j][i].nodeid = nodeid;
                 tmsg[j][i].tasktype = TRACKTASK;
                 tmsg[j][i].objectid = i + OBJECTID;
                 count_communication(1);
                 printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
             }
+            else {
+                /* 按概率发送任务消息 */
+                srand((unsigned)time(NULL));
+                percent = 1 / PVALUE;
+                if( 1 == rand() % percent)
+                {
+                    tmsg[j][i].nodeid = nodeid;
+                    tmsg[j][i].tasktype = TRACKTASK;
+                    tmsg[j][i].objectid = i + OBJECTID;
+                    count_communication(1);
+                    printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
+                }
+            }
+            break;
+        case BROADCAST:
+            /* 100%发送任务消息 */
+            tmsg[j][i].nodeid = nodeid;
+            tmsg[j][i].tasktype = TRACKTASK;
+            tmsg[j][i].objectid = i + OBJECTID;
+            count_communication(1);
+            printf("节点 %d 向 节点 %d 发布 目标 %d 跟踪任务\n", nodeid, j+NODEID, tmsg[j][i].objectid );
+            break;
+        default:
+            break;
         }
     }
 }

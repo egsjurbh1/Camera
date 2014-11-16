@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1415528932 source:d:\project\c\camera\main.c
+1416140676 source:d:\project\c\camera\main.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -10,11 +10,11 @@
 	"object.h"
 	"general.h"
 
-1415527838 d:\project\c\camera\camera.h
+1416141148 d:\project\c\camera\camera.h
 	"map.h"
 	"object.h"
 
-1415519285 source:d:\project\c\camera\camera.c
+1416127498 source:d:\project\c\camera\camera.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -30,9 +30,9 @@
 	<time.h>
 	"map.h"
 
-1414487391 d:\project\c\camera\map.h
+1416128339 d:\project\c\camera\map.h
 
-1415528890 source:d:\project\c\camera\object.c
+1416140801 source:d:\project\c\camera\object.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -41,10 +41,10 @@
 	<math.h>
 	"object.h"
 
-1415508363 d:\project\c\camera\object.h
+1416146368 d:\project\c\camera\object.h
 	"map.h"
 
-1415528909 source:d:\project\c\camera\general.c
+1416128148 source:d:\project\c\camera\general.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -53,7 +53,7 @@
 	<math.h>
 	"general.h"
 
-1415527005 d:\project\c\camera\general.h
+1416128313 d:\project\c\camera\general.h
 	"camera.h"
 	"object.h"
 
