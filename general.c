@@ -1,13 +1,14 @@
-/** \brief 输出、通用函数库
+/** \brief 通用系统函数库
  *
  * \author lq
- * \update 141109
- * \return
+ * \update 141121
+ * \note 增加读配置文件全局参数配置，未完成……
  *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
@@ -15,6 +16,8 @@
 #include "general.h"
 
 static void WriteOutfileThread(void *arg);
+static int readfile( char *filename, FileBuf *buf);
+static int prasebuffer( const char *keyname, int *location, FileBuf *buf);
 
 /**< 输出总控 */
 void OutputControl( Node *node )
@@ -100,4 +103,140 @@ static void WriteOutfileThread(void *arg)
     fclose(fp[1]);
 }
 
+/**< 系统初始化 */
+int SystemInit(CfgStruct *cfg)
+{
+    FileBuf buf[CONFIGNUM];
+    int ret,location;
 
+    /* 读配置文件 */
+    ret = readfile("config.ini", buf);
+    if(ret) {
+        printf("readfile error.\n");
+        return -1;
+    }
+    /* 参数配置 */
+    ret = prasebuffer( "nodenum", &location, buf);
+    if(!ret)
+        cfg->Camera.nodenum = NODENUM;  //读默认参数
+    else
+        cfg->Camera.nodenum = atoi(buf[location].keyvalue);
+
+    ret = prasebuffer( "pvalue", &location, buf);
+    if(!ret)
+        cfg->Camera.pvalue = PVALUE;  //读默认参数
+    else
+        cfg->Camera.pvalue = atof(buf[location].keyvalue);
+
+    ret = prasebuffer( "strengthincre", &location, buf);
+    if(!ret)
+        cfg->Camera.strengthincre = STRENGTHINCRE;  //读默认参数
+    else
+        cfg->Camera.strengthincre = atof(buf[location].keyvalue);
+
+    ret = prasebuffer( "strengthinit", &location, buf);
+    if(!ret)
+        cfg->Camera.strengthinit = STRENGTHINIT;  //读默认参数
+    else
+        cfg->Camera.strengthinit = atof(buf[location].keyvalue);
+
+    ret = prasebuffer( "strengthratio", &location, buf);
+    if(!ret)
+        cfg->Camera.strengthratio = STRENGTHRATIO;  //读默认参数
+    else
+        cfg->Camera.strengthratio = atof(buf[location].keyvalue);
+
+    ret = prasebuffer( "tvalue", &location, buf);
+    if(!ret)
+        cfg->Camera.tvalue = TVALUE;  //读默认参数
+    else
+        cfg->Camera.tvalue = atof(buf[location].keyvalue);
+
+    ret = prasebuffer( "objectnum", &location, buf);
+    if(!ret)
+        cfg->Object.objectnum = OBJECTNUM;  //读默认参数
+    else
+        cfg->Object.objectnum = atoi(buf[location].keyvalue);
+
+    return 0;
+}
+
+/**<  File Prase Function
+*   out:buf
+*/
+static int readfile( char *filename, FileBuf *buf)
+{
+	int i,j,k,flag,bannotaion;
+	char c;
+	FILE *fp;
+
+	i = j = k = flag = bannotaion = 0;
+	fp = fopen( filename, "r");
+	if(fp == NULL) {
+		printf("Open file %s Error!\n", filename);
+		return -1;
+	}
+
+	while( (c = fgetc(fp)) != EOF )
+    {
+        if( c == '#' ) {    //注释
+            if(bannotaion)
+                bannotaion = 0;
+            else
+                bannotaion = 1;
+            continue;
+        }
+        if( bannotaion )
+            continue;
+        if( c == ' ' || c == '\n' || c == '\t')
+            continue;
+        if( c == '=' ) {
+            buf[i].keyname[j] = '\0';
+            flag = 1;
+            j = 0;
+            continue;
+        }
+        if ( c == ';') {
+            buf[i].keyvalue[k] = '\0';
+            flag = 0;
+            k = 0;
+            ++i;
+            continue;
+        }
+
+        if(flag) {
+            buf[i].keyvalue[k] = c;
+            ++k;
+        } else {
+            buf[i].keyname[j] = c;
+            ++j;
+        }
+	}
+	fclose(fp);
+	return 0;
+}
+
+/**< Prase buffer Function
+*   find keyname = keyvalue from buf
+*/
+static int prasebuffer( const char *keyname, int *location, FileBuf *buf)
+{
+    int i,flag;
+    i = flag = 0;
+    while(*buf[i].keyname != NULL)
+    {
+        if( !strcmp(&buf[i].keyname, keyname) ) {
+            *location = i;
+            flag = 1;
+            break;
+        }
+        else
+            ++i;
+    }
+    if(flag)
+        return 1;
+    else {
+        printf("Cannot find keyname!\n");
+        return 0;
+    }
+}

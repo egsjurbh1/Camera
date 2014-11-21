@@ -1,9 +1,9 @@
 /** \brief 摄像头网络目标跟踪仿真
  *
  * \author lq
- * \update 141116
- * \version v0.9.2
- * \notice shutup firefox while running!
+ * \update 141121
+ * \version v1.0.0
+ * \notice
  */
 
 #include <stdio.h>
@@ -19,6 +19,7 @@
 int main()
 {
     int ret;
+
     /*MapBlock[i][j]存储地图坐标（i,j）*/
     volatile int MapBlock[MAPX][MAPY];    //类型 IMPASSABLE：不可通行；PASSABLE：可通行
     /*crossroad[i]存储交叉路口i信息*/
@@ -34,21 +35,21 @@ int main()
     ret = RoadMapInit(MapBlock, CrossRoad);
     if(ret != 0) {
         printf("RoadMapInit Error!\n");
-        return 0;
+        return -2;
     }
 
     /* 摄像头节点初始化 */
     ret = CameraInit( CameraNode, NodeMsg, TaskMsg );
     if(ret != 0) {
         printf("CameraInit Error!\n");
-        return 0;
+        return -3;
     }
 
     /* 目标初始化 */
     ret = ObjectInit( TrackObject );
     if(ret != 0) {
         printf("ObjectInit Error!\n");
-        return 0;
+        return -4;
     }
     printf("Init Success!\n");
 

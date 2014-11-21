@@ -176,7 +176,6 @@ static void check_nodemsg( Node *node, int nmsg[][NODENUM] )
             }
             nmsg[n][i] = NONEA;    //消息初始化
         }
-        //usleep(SLEEPT);
         sleep(1);
     }
 
@@ -215,7 +214,6 @@ static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJE
     oid = i + OBJECTID; //取目标位置对应的目标编号
     while(1)
     {
-        //sleep(1);
         /* 扫描任务消息表 */
         for(i = 0; i < OBJECTNUM; i++)
         {
@@ -237,7 +235,6 @@ static void check_taskmsg( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJE
             tmsg[n][i].nodeid = NONEID;
             tmsg[n][i].tasktype = NONEA;
         }
-        //usleep(SLEEPT);
         sleep(1);
     }
 
@@ -282,7 +279,6 @@ static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJEC
 
     while(1)
     {
-        //sleep(1);
         for( i = 0; i < OBJECTNUM; i++ )
         {
             if( obj[i].coo.x == node->coo.x && obj[i].coo.y == node->coo.y ) //目标在节点FOV内
@@ -324,7 +320,6 @@ static void ObjcetDetect( Node *node, int nmsg[][NODENUM], TaskInfo tmsg[][OBJEC
                 node->SdetectO[i][1] = NONEID;
             }
         }
-        //usleep(SLEEPT);
         sleep(1);
     }
 }
