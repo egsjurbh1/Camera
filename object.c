@@ -1,7 +1,7 @@
 /** \brief 运动目标
  *
  * \author lq
- * \update 141116
+ * \update 141201
  * \return
  *
  */
@@ -12,40 +12,53 @@
 #include <semaphore.h>
 #include <time.h>
 #include <math.h>
+#include <windows.h>
 #include "object.h"
 
-static int gValue[MAPX][MAPY]; /* 记录已走过的路 */
-
-static int find_path(int mapblock[][MAPY], int x, int y, MapCoo destco, MapCoo *route);
-static int check_pos_valid(int mapblock[][MAPY], int x, int y);
-static void MoveMode0Thread( void *arg );
-static void MoveMode1Thread( void *arg );
-static int find_next(int mapblock[][MAPY], int x, int y, MapCoo *nextco );
-static void waitdonothing( int timelength );
-static int moveto(int mapblock[][MAPY], Object *obj, MapCoo *nextco );
+static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy);
+static void MoveModeThread( void *arg );
+static int find_direction(Object *obj);
+static void waitdonothing( float timelength );
+static int moveto( MapFrame *mapf, Object *obj, MapCoo *nextco, int mapx, int mapy );
+static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy);
+static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys );
+static void active_move( Object *obj, MapFrame *mapf, Cross *cross, SystemPara *sys );
 
 /***************************************************************
-*目标初始化函数
+*   目标初始化函数
 *****/
-int ObjectInit( Object *obj )
+int ObjectInit( Object *obj, SystemPara *sys )
 {
     int i;
-    int objectcoo[OBJECTNUM][2] = {{1,1},{2,1}};  //初始化坐标
-    int destcoo[OBJECTNUM][2] = {{5,1},{3,1}};  //目的地坐标
-    float speed[2] = {0.5, 0.2};    //目标速度 单位：秒/格
+    int objectnum_init,objectnum;
+    objectnum = sys->Object.objectnum;
+    objectnum_init = sys->Object.objectid_init;
 
     //初始化参数
-    for( i = 0; i < OBJECTNUM; i++)
+    for( i = 0; i < objectnum; i++)
     {
-        obj[i].coo.x = objectcoo[i][0];
-        obj[i].coo.y = objectcoo[i][1];
-        obj[i].destcoo.x = destcoo[i][0];
-        obj[i].destcoo.y = destcoo[i][1];
-        obj[i].objectid = OBJECTID + i;
-        obj[i].speed = speed[0];
-        obj[i].mode = ACTIVEMODE;   //PASSIVEMODE, ACTIVEMODE
-        printf("目标%d 初始化成功。\n", obj[i].objectid );
+        obj[i].objectid = objectnum_init + i;
+        obj[i].speed = sys->Object.speed[0];
+        obj[i].distance = 0;
+        printf("Object:%d Initialize Success.\n", obj[i].objectid );
     }
+    obj[0].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[0].coo.x = 90;
+    obj[0].coo.y = 25;
+    obj[0].direction = EAST;
+    obj[0].route = RMODE_A;
+    obj[1].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[1].coo.x = 70;
+    obj[1].coo.y = 25;
+    obj[1].route = RMODE_B;
+    obj[2].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[2].coo.x = 25;
+    obj[2].coo.y = 10;
+    obj[2].route = RMODE_C;
+    obj[3].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[3].coo.x = 90;
+    obj[3].coo.y = 25;
+    obj[3].direction = EAST;
     return 0;
 }
 
@@ -54,116 +67,156 @@ int ObjectInit( Object *obj )
 *   输入：地图,目标信息,控制参数
 *   创建目标运动线程
 ****/
-void ObjectMovement( int mapb[][MAPY], Object *obj, int configarg )
+void ObjectMovement( MapFrame *mapf, Cross *cross, Object *obj, SystemPara *sys )
 {
-    int i, ret;
-    int mode[OBJECTNUM];
-    pthread_t objectthread[OBJECTNUM];
+    int i, ret, objectnum;
+    objectnum = sys->Object.objectnum;
+
+    pthread_t objectthread[objectnum];
     pthread_attr_t attr;
-    MoveArg marg1[OBJECTNUM], marg2[OBJECTNUM];
+    MoveArg marg[objectnum];
 
     //init
     pthread_attr_init(&attr);
     // explicitly specify as joinable PTHREAD_CREATE_JOINABLE or detached  PTHREAD_CREATE_DETACHED
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     /* 线程参数接口 */
-    for( i = 0; i < OBJECTNUM; i++ )
+    for( i = 0; i < objectnum; i++ )
     {
-        marg1[i].mapblock = mapb;
-        marg1[i].obj = &obj[i];
-        marg2[i].mapblock = mapb;
-        marg2[i].obj = &obj[i];
-        mode[i] = obj[i].mode;
+        marg[i].mapf = mapf;
+        marg[i].obj = &obj[i];
+        marg[i].cross = cross;
+        marg[i].sys = sys;
     }
 
-    /* 判断控制参数*/
-    switch(configarg){
-    case STOPACTION: //终止
-        exit(1);
-        break;
-    case EXECUTEACTION: //执行
-        break;
-    default:
-        exit(1);
-        break;
-    }
-
-    /* 判断运动方式 */
-    for( i = 0; i < OBJECTNUM; i++ )
+    /* 创建各目标线程 */
+    for( i = 0; i < objectnum; i++ )
     {
-        switch(mode[i]){
-        case PASSIVEMODE: //离线路径引导模式
-            ret = pthread_create(&objectthread[i], &attr, (void *)MoveMode0Thread, &marg1[i]);    //mode0运动线程
-            if(ret!=0) {
-                printf("Create MoveMode0Thread error!\n");
-                exit(1);
-            }
-            sleep(1);
-            printf("目标 %d 运动线程（模式:0：路径引导）创建。\n", obj[i].objectid );
-            break;
-        case ACTIVEMODE: //在线寻路模式
-            ret = pthread_create(&objectthread[i], &attr, (void *)MoveMode1Thread, &marg2[i]);    //mode0运动线程
-            if(ret!=0) {
-                printf("Create MoveMode1Thread error!\n");
-                exit(1);
-            }
-            sleep(1);
-            printf("目标 %d 运动线程（模式1：随机寻路）创建。\n", obj[i].objectid );
-            break;
-        default:
-            break;
+        ret = pthread_create(&objectthread[i], &attr, (void *)MoveModeThread, &marg[i]);    //mode0运动线程
+        if(ret) {
+            printf("Create MoveModeThread of %d error!\n", obj[i].objectid);
+            exit(1);
         }
+        sleep(1);
+        printf("Object:%d ObjectMovement Thread Created. Mode:%d\n", obj[i].objectid, obj[i].mode );
     }
     //release thread attribute
     pthread_attr_destroy(&attr);
 }
 
 /*************************************
-*   目标运动线程1（主动随机寻路）
-*   输入：目标信息,起点,速度(n格/s)
-*
+*   目标运动线程
 *************************************/
-static void MoveMode1Thread( void *arg )
+static void MoveModeThread( void *arg )
 {
+    int mode;
+    //接口参数
     MoveArg *psarg;
-    int **mapblock;
+    MapFrame *mapf;
     Object *obj;
-
-    float speed;
-    MapCoo currentco;
-    MapCoo nextco;
+    Cross *cross;
+    SystemPara *sys;
 
     //参数引用
     psarg = (MoveArg *)arg;
-    mapblock = psarg->mapblock;
+    mapf = psarg->mapf;
     obj = psarg->obj;
+    cross = psarg->cross;
+    sys = psarg->sys;
 
+    mode = obj->mode;
+    switch(mode){
+    case ACTIVEMODE:
+        active_move(obj, mapf, cross, sys);//主动寻路
+        break;
+    case PASSIVEMODE:
+        passive_move(obj, mapf, sys);//被动引导
+        break;
+    default:
+        break;
+    }
+}
+
+/** \brief 主动寻路模式
+ *
+ * \param 目标信息,起点,速度
+ * \param
+ * \return
+ *
+ */
+ static void active_move( Object *obj, MapFrame *mapf, Cross *cross, SystemPara *sys )
+ {
+    int i,crossnum,mapx,mapy;
+    float speed;
+    MapCoo nextco;
+
+    printf("Object:%d, Start POS:(%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
     speed = obj->speed;
-
-    printf("目标 %d 开始位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
+    nextco.x = cross[1].coo.x;
+    nextco.y = cross[1].coo.y;
+    crossnum = sys->Map.crossnum;
+    mapx = sys->Map.x_max;
+    mapy = sys->Map.y_max;
+    //移动到路口中心
+    moveto(mapf, obj, &nextco, mapx, mapy);
     while(1)
     {
-        //目标起始坐标
-        currentco.x = obj->coo.x;
-        currentco.y = obj->coo.y;
-        //寻找下一坐标
-        if( find_next( mapblock, currentco.x, currentco.y, &nextco ) )
-        {
-            obj->coo.x = nextco.x;  //移动
-            obj->coo.y = nextco.y;
-            printf("目标 %d 位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
-            waitdonothing(1/speed); //等待
+        /* 判定是否到达路口中心决策点 */
+        for(i = 0; i < crossnum; ++i) {
+            if(obj->coo.x == cross[i].coo.x && obj->coo.y == cross[i].coo.y) {
+                find_direction(obj);
+                printf("Object:%d, CrossCenter POS:(%d, %d), D:%d\n", obj->objectid, obj->coo.x, obj->coo.y, obj->direction);
+                sleep(1/speed);//等待
+                break;
+            }
         }
-        //usleep(100);
+        /* 根据方向移动到下一位置 */
+        switch(obj->direction){
+        case NORTH:
+            ++obj->coo.y;
+            if(!check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+                --obj->coo.y;
+                obj->direction = SOUTH; //change move direction
+                printf("Object:%d, MapBoundary POS:(%d, %d), D:↓\n", obj->objectid, obj->coo.x, obj->coo.y);
+            }
+            break;
+        case SOUTH:
+            --obj->coo.y;
+            if(!check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+                ++obj->coo.y;
+                obj->direction = NORTH; //change move direction
+                printf("Object:%d, MapBoundary POS:(%d, %d), D:↑\n", obj->objectid, obj->coo.x, obj->coo.y);
+            }
+            break;
+        case EAST:
+            ++obj->coo.x;
+            if(!check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+                --obj->coo.x;
+                obj->direction = WEST; //change move direction
+                printf("Object:%d, MapBoundary POS:(%d, %d), D:←\n", obj->objectid, obj->coo.x, obj->coo.y);
+            }
+            break;
+        case WEST:
+            --obj->coo.x;
+            if(!check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+                ++obj->coo.x;
+                obj->direction = EAST; //change move direction
+                printf("Object:%d, MapBoundary POS:(%d, %d), D:→\n", obj->objectid, obj->coo.x, obj->coo.y);
+            }
+            break;
+        default:
+            break;
+        }
+        sleep(1/speed);//等待
     }
 }
 
 /*****
-*   目标移动到下一坐标
+*   决策下一方位
 *   输入：地图，起点坐标x、y，目标；
 *   返回1找到可通行点
 *****/
-static int find_next(int mapblock[][MAPY], int x, int y, MapCoo *nextco )
+static int find_direction(Object *obj)
 {
     int i;
     /* 随机决策下一方位 */
@@ -172,36 +225,20 @@ static int find_next(int mapblock[][MAPY], int x, int y, MapCoo *nextco )
 
     switch(i){
     case 0:
-        if( check_pos_valid(mapblock, x - 1, y) ) {
-            nextco->x = x - 1;
-            nextco->y = y;
-        }
-        else
-            return 0;
+        obj->direction = EAST;
+        ++obj->coo.x;
         break;
     case 1:
-        if( check_pos_valid(mapblock, x, y - 1) ) {
-            nextco->x = x;
-            nextco->y = y - 1;
-        }
-        else
-            return 0;
+        obj->direction = WEST;
+        --obj->coo.x;
         break;
     case 2:
-        if( check_pos_valid(mapblock, x + 1, y) ) {
-            nextco->x = x + 1;
-            nextco->y = y;
-        }
-        else
-            return 0;
+        obj->direction = NORTH;
+        ++obj->coo.y;
         break;
     case 3:
-        if( check_pos_valid(mapblock, x, y + 1) ) {
-            nextco->x = x;
-            nextco->y = y + 1;
-        }
-        else
-            return 0;
+        obj->direction = SOUTH;
+        --obj->coo.y;
         break;
     default:
         printf("FUCK ERROR!\n");
@@ -211,148 +248,168 @@ static int find_next(int mapblock[][MAPY], int x, int y, MapCoo *nextco )
     return 1;
 }
 
-/*******************************************
-*   等待函数
-*   单位秒
-*****/
-static void waitdonothing( int timelength )
+/** \brief 路径引导模式
+ *
+ * \param 目标信息,起点,终点,速度
+ * \param
+ * \return
+ *
+ */
+static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys )
 {
-    time_t tb,te;
+    int routemode;
+    int mapx,mapy;
 
-    time(&tb);
-    while(1)
-    {
-        time(&te);
-        if( abs(te - tb) >= timelength )
-            break;
-        sleep(1);
+    routemode = obj->route;
+    mapx = sys->Map.x_max;
+    mapy = sys->Map.y_max;
+
+    printf("Object:%d, Start POS:(%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
+    //路径引导
+    if(route(routemode, obj, mapf, mapx, mapy)) {
+        printf("Error:Object %d route failed.\n", obj->objectid);
+        exit(1);
     }
 }
 
-/******************************
-*   目标运动线程0（路径引导）
-*   输入：目标信息,起点,终点,速度(n格/s)
-*
-*****************************/
-static void MoveMode0Thread( void *arg )
-{
-    MoveArg *psarg;//接口结构
-    int **mapblock;
-    Object *obj;
-
-    MapCoo destco;
-    float speed;
-    //路径
-    MapCoo route[10] = { {2,1},{1,1},{1,2},{1,1},{0,1},{1,1},{1,0},{1,1},{2,1},{3,1} };
-    int i;
-    //参数引用
-    psarg = (MoveArg *)arg;
-    mapblock = psarg->mapblock;
-    obj = psarg->obj;
-    //目标坐标
-
-    destco.x = obj->destcoo.x;
-    destco.y = obj->destcoo.y;
-    speed = obj->speed;
-
-    //目标按路径从起点移动至终点
-    printf("目标 %d 开始位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
-
-    for( i = 0;; i++) {
-        if( i == 10)
-            i = 0;
-        if( moveto(mapblock, obj, &route[i] ) )
-            waitdonothing(1/speed); //等待
-        else
-            printf("不可通行！\n");
-    }
-}
-
-/******边界检测******/
-static int check_pos_valid(int mapblock[][MAPY], int x, int y)
-{
-    /* 节点是否出边界 */
-    if(x < 0 || x > MAPX || y < 0 || y > MAPY)
-        return 0;
-
-    /* 当前节点是否存在路 */
-    if(mapblock[x][y] == IMPASSABLE)
-        return 0;
-
-    /* 当前节点是否已经走过
-    if(gValue[x][y] == PASSED)
-        return 0;*/
-
-    return 1;
-}
-
-/****
-*   寻找可通行路径
-*   输入：地图，起点坐标x、y，目的地destco；
-*   输出：路径数组
-****/
-static int find_path(int mapblock[][MAPY], int x, int y, MapCoo destco, MapCoo *route)
-{
-    static int i = 0;
-    if(check_pos_valid(mapblock, x, y))
-    {
-        if(destco.x == x && destco.y == y){
-            gValue[x][y] = PASSED;
-            route[i].x = x;
-            route[i].y = y;
-            return 1;
-        }
-        gValue[x][y] = PASSED;
-        route[i].x = x;
-        route[i].y = y;
-        ++i;
-        if(find_path(mapblock, x, y-1, destco, route))
-            return 1;
-
-        if(find_path(mapblock, x-1, y, destco, route))
-            return 1;
-
-        if(find_path(mapblock, x, y+1, destco, route))
-            return 1;
-
-        if(find_path(mapblock, x+1, y, destco, route))
-            return 1;
-        gValue[x][y] = IMPASSABLE;
-        return 0;
-    }
-    //路径终点标记
-    route[i+1].x = ENDROUTE;
-    route[i+1].y = ENDROUTE;
-    return 0;
-}
-
-/** \brief Moveto定点移动
+/** \brief Route路径函数
  *
  * \param
  * \param
  * \return
  *
  */
-static int moveto(int mapblock[][MAPY], Object *obj, MapCoo *nextco )
+static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy)
 {
-    int x,y,ox,oy;
-    x = nextco->x;
-    y = nextco->y;
+    int i,m;
+    int mc_a[9][2] = {{75,25},{25,25},{25,48},{25,25},{1,25},{25,25},{25,1},{25,25},{75,25}};
+    int mc_b[3][2] = {{75,25},{1,25},{75,25}};
+    int mc_c[3][2] = {{25,1},{25,49},{25,1}};
+    MapCoo nextco;
+
+    switch(mode){
+    case RMODE_A:
+        m = sizeof(mc_a)/sizeof(int)/2;
+        for(i = 0; i < m; ++i) {
+            nextco.x = mc_a[i][0];
+            nextco.y = mc_a[i][1];
+            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
+                break;
+            if(i == (m-1))
+                i = 0;
+        }
+        break;
+    case RMODE_B:
+        m = sizeof(mc_b)/sizeof(int)/2;
+        for(i = 0; i < m; ++i) {
+            nextco.x = mc_b[i][0];
+            nextco.y = mc_b[i][1];
+            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
+                break;
+            if(i == (m-1))
+                i = 0;
+        }
+        break;
+     case RMODE_C:
+        m = sizeof(mc_c)/sizeof(int)/2;
+        for(i = 0; i < m; ++i) {
+            nextco.x = mc_c[i][0];
+            nextco.y = mc_c[i][1];
+            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
+                break;
+            if(i == (m-1))
+                i = 0;
+        }
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+/** \brief Moveto定点移动函数
+ *
+ * \param (1,2)->(3,6) 移动过程：(1,2)->(3,2)->(3,6)
+ * \param
+ * \return
+ *
+ */
+static int moveto( MapFrame *mapf, Object *obj, MapCoo *nextco, int mapx, int mapy )
+{
+    int nx,ny,ox,oy;
+    nx = nextco->x;
+    ny = nextco->y;
     ox = obj->coo.x;
     oy = obj->coo.y;
-    //相邻路径
-    if(( abs( x - ox ) <= 1 && y == oy ) || ( abs( y - oy) <= 1 && x == ox )) {
-        if( check_pos_valid(mapblock, x, y) ) {
-            //Move to nextco
-            obj->coo.x = x;
-            obj->coo.y = y;
-            printf("目标 %d 位置 (%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
-        }
-        else
-            return 0;
+    int speed = obj->speed;
+
+    if(!check_pos_valid(mapf, nx, ny, mapx, mapy)) {
+        printf("(%d,%d) Out of MAP or impassable.\n", nx, ny);
+        return 0;
     }
-    else
+    //水平方向
+    while(abs(obj->coo.x - nx) != 0 )
+    {
+        if(check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+            if(nx >= ox)
+                ++obj->coo.x;
+            else
+                --obj->coo.x;
+            sleep(1/speed);//等待
+        }
+        else {
+            printf("Bad start position.\n");
+            break;
+        }
+    }
+    //竖直方向
+    while(abs(obj->coo.y - ny) != 0 )
+    {
+        if(check_pos_valid(mapf, obj->coo.x, obj->coo.y, mapx, mapy)) {
+            if(ny >= oy)
+                ++obj->coo.y;
+            else
+                --obj->coo.y;
+            sleep(1/speed);//等待
+        }
+        else {
+            printf("Bad start position.\n");
+            break;
+        }
+    }
+
+    printf("Object:%d, Position:(%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
+    return 1;
+}
+
+/******边界检测******/
+static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy)
+{
+    /* 节点是否出边界 */
+    if(x < 0 || x > mapx || y < 0 || y > mapy)
+        return 0;
+
+    /* 当前节点是否存在路 */
+    if((mapf+x*mapx+y)->abletag == IMPASSABLE)
         return 0;
 
     return 1;
+}
+
+/*******************************************
+*   等待函数
+*   单位秒
+*****/
+static void waitdonothing( float timelength )
+{
+    clock_t tb,te;
+
+    tb = clock();
+    while(1)
+    {
+        te = clock();
+        if( abs(te - tb)/CLOCKS_PER_SEC >= timelength )
+            break;
+        Sleep(50);
+    }
 }

@@ -1,8 +1,8 @@
-/** \brief 摄像头网络目标跟踪仿真
+/** \brief Camera Networks Software Framework
  *
- * \author lq
- * \update 141121
- * \version v1.0.0
+ * \author chinglee
+ * \update 141203
+ * \version v1.1.2
  * \notice
  */
 
@@ -11,58 +11,65 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <windows.h>
 #include "camera.h"
 #include "map.h"
 #include "object.h"
 #include "general.h"
+#include "system.h"
 
 int main()
 {
     int ret;
+    SystemPara SysPara;                         //系统参数
+    volatile MapFrame *MapBlock;                //地图
+    volatile Cross *CrossRoad;                  //路口
+    volatile Object *TrackObject;               //目标
+    volatile Node *CameraNode;                  //节点
 
-    /*MapBlock[i][j]存储地图坐标（i,j）*/
-    volatile int MapBlock[MAPX][MAPY];    //类型 IMPASSABLE：不可通行；PASSABLE：可通行
-    /*crossroad[i]存储交叉路口i信息*/
-    volatile Cross CrossRoad[CROSSNUM];
-    volatile Object TrackObject[OBJECTNUM];   //跟踪目标
-    volatile Node CameraNode[NODENUM];  //摄像头节点
-    /*NodeMsg[i][j]存储节点j发给节点i的消息*/
-    volatile int NodeMsg[NODENUM][NODENUM];   //消息类型 NONEACTION：无；SUCCESSA：移交成功；FAILA：非相邻节点；
-    /*TaskMsg[i][j]存储节点i收到目标j的任务消息*/
-    volatile TaskInfo TaskMsg[NODENUM][OBJECTNUM];
+    /* 系统参数初始化 */
+    ret = SystemInit(&SysPara);
+    if(ret) {
+        printf("SystemInit Error!\n");
+        return -9;
+    }
 
     /* 道路和地图配置初始化 */
-    ret = RoadMapInit(MapBlock, CrossRoad);
-    if(ret != 0) {
+    MapBlock = (MapFrame *)malloc( 2 * SysPara.Map.x_max * SysPara.Map.y_max * sizeof(MapFrame));
+    CrossRoad = (Cross *)malloc( SysPara.Map.crossnum * sizeof(Cross));
+    ret = RoadMapInit(MapBlock, CrossRoad, &SysPara);
+    if(ret) {
         printf("RoadMapInit Error!\n");
-        return -2;
+        return -1;
     }
 
     /* 摄像头节点初始化 */
-    ret = CameraInit( CameraNode, NodeMsg, TaskMsg );
-    if(ret != 0) {
+    CameraNode = (Node *)malloc( 3 * SysPara.Node.nodenum * sizeof(Node));  //防止内存不够！
+    ret = CameraInit( CameraNode, CrossRoad, &SysPara );
+    if(ret) {
         printf("CameraInit Error!\n");
-        return -3;
+        return -2;
     }
 
     /* 目标初始化 */
-    ret = ObjectInit( TrackObject );
-    if(ret != 0) {
+    TrackObject = (Object *)malloc( 3 * SysPara.Object.objectnum * sizeof(Object));
+    ret = ObjectInit( TrackObject, &SysPara );
+    if(ret) {
         printf("ObjectInit Error!\n");
-        return -4;
+        return -3;
     }
     printf("Init Success!\n");
 
     /* 摄像头节点总控 */
-    CameraControl( CameraNode, NodeMsg, TaskMsg, TrackObject );
+    CameraControl( CameraNode, TrackObject, &SysPara );
     sleep(1);
 
     /* 目标运动总控 */
-    ObjectMovement( MapBlock, TrackObject, EXECUTEACTION );
+    ObjectMovement( MapBlock, CrossRoad, TrackObject, &SysPara );
     sleep(1);
 
-    /* 输出结果总控 */
-    OutputControl( CameraNode );
+    /* 输出总控 */
+    OutputControl( CameraNode, TrackObject, &SysPara );
     sleep(1);
 
     /* main主线程等待 */

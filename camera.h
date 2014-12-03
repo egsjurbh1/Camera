@@ -1,58 +1,67 @@
 #ifndef _CAMERA_H
 #define _CAMERA_H
 
-#define NODENUM 5           //节点数
-/* 关系强度 */
-#define STRENGTHINIT 1.3    //strength初值
-#define STRENGTHINCRE 1.0   //增量
-#define STRENGTHRATIO 0.1   //系数
-#define PVALUE 0.01         //公式参数概率ω
-#define TVALUE 1.0          //公式参数阈值
+#define MAXNODE         20      //node max
+#define MAXOBJECT       40      //object max
+
+/* 通信 */
+#define TASKCOMMU       1       //任务发布通信
+#define FEEDBACKCOMMU   2       //反馈消息通信
+#define OUTPUTIC        3       //输出瞬时通信量
 
 /* 消息、任务类型 */
-#define NONEA 0             //初始化
-#define SUCCESSA 1          //移交成功
-#define FAILA 2             //非相邻节点
-#define TRACKTASK 11        //跟踪任务
-#define MULTICAST 1         //任务发布模式：组播
-#define BROADCAST 2         //任务发布模式：广播
+#define NONEA           0       //初始化
+#define SUCCESSA        1       //移交成功
+#define FAILA           2       //非相邻节点
 
-/* 编号 */
-#define NONEID 0            //无编号
-#define NODEID 101          //节点起始编号
+#define TRACKTASK       1       //跟踪任务
+
 
 #include "map.h"
 #include "object.h"
+#include "system.h"
 
 /* 任务消息 */
 typedef struct TaskInfoStruct
 {
-    int nodeid;     //消息源节点
-    int objectid;   //目标
-    int tasktype;   //消息类型 NONEA：无任务；TRACKTASK：跟踪任务；
+    int nodeid;         //消息源节点
+    int objectid;       //目标
+    int tasktype;       //消息类型 NONEA：无任务；TRACKTASK：跟踪任务；
 }TaskInfo;
+
+/* 任务集合 */
+typedef struct TaskSetStruct
+{
+    int objectid;                   //目标编号
+    int postnodeid;                 //消息源节点编号
+}TaskSet;
 
 /* 节点信息 */
 typedef struct NodeStruct
 {
     int nodeid;                     //节点编号
-    float rstrength[NODENUM];       //节点关系强度表
-    int SdetectO[OBJECTNUM][2];     //目标跟踪集,位置0存目标编号，位置1存源节点号
-    int StrackO[OBJECTNUM][2];      //跟踪任务集
-    MapCoo coo;
+    MapCoo coo;                     //节点位置坐标
+    int fovlength;                  //视域长度
+    int fovhalfwidth;               //视域半宽
+    int direction;                  //监控方向
+    int commu_mode;                 //发布任务的方式 MULTICAST,BROADCAST
+    float load;                     //节点负载
+    float utility;                  //节点效用
+    float *rstrength;               //节点关系强度表
+    TaskSet *SdetectO;              //目标跟踪集
+    TaskSet *StrackO;               //跟踪任务集
 }Node;
 
 /* 节点反馈消息处理线程参数结构体 */
 typedef struct CameraThreadArgStruct
 {
-    int **nodemsg;
     Node *node;
     Object *object;
-    TaskInfo **taskmsg;
+    SystemPara *sys;
 }CameraThreadArg;
 
-extern int CameraInit( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJECTNUM]);                      //节点初始化函数
-extern void CameraControl( Node *node, int nodemsg[][NODENUM], TaskInfo taskmsg[][OBJECTNUM], Object *obj );    //节点总控函数
-extern int count_communication(int flag);                                                                       //通信代价统计
+extern int CameraInit(Node *node, Cross *cross, SystemPara *sys);                                       //节点初始化函数
+extern void CameraControl( Node *node, Object *obj, SystemPara *sys );                                  //节点总控函数
+extern float count_communication(int flag, int type, float *ic, float taskcost, float feedbackcost);    //通信代价统计
 
 #endif // _CAMERA_H

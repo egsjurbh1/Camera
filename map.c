@@ -1,8 +1,8 @@
-/** \brief 道路地图模拟
+/** \brief 道路地图
  *
  * \author lq
- * \update 141028
- * \return
+ * \update 141126
+ * \return 基于坐标
  *
  */
 
@@ -11,97 +11,96 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <windows.h>
 #include "map.h"
 
-static int CrossConfig(int mapb[][MAPY], Cross *cross);
+static int CrossInit(MapFrame *mapf, Cross *cross, int mapx, int mapy);
 
-/*
-*道路地图初始化
-*Input：地图，路口
+/**
+*   道路地图初始化
+*   Input：地图，路口
 */
-int RoadMapInit(int mapblock[][MAPY], Cross *cross)
+int RoadMapInit(MapFrame *mapf, Cross *cross, SystemPara *sys)
 {
-    int i,j,ret;
+    int i,j,crossid_init;
+    int mapx,mapy;
 
-    /* 地图初始化*/
-    for( i = 0; i < MAPX; i++)
-        for( j = 0; j < MAPY; j++)
-            mapblock[i][j] = IMPASSABLE;
-    printf("地图初始化完成。\n");
+    /* 取系统参数 */
+    mapx = sys->Map.x_max;
+    mapy = sys->Map.y_max;
+    crossid_init = sys->Map.crossid_init;
 
-    for(i = 0; i < CROSSNUM; i++)
-    {
-        /* 配置交叉路口坐标和编号 */
-        cross[i].roadid = ROADID+i;
-        switch(i){
-        case 0:
-            cross[i].coo.x = CROSS1_X;
-            cross[i].coo.y = CROSS1_Y;
-            break;
-        case 1:
-            cross[i].coo.x = CROSS2_X;
-            cross[i].coo.y = CROSS2_Y;
-            break;
-        default:
-            break;
+    /* 地图初始化 */
+    for( i = 0; i < mapx; i++)
+        for( j = 0; j < mapy; j++) {
+            (mapf+mapx*i+j)->coo.x = i;
+            (mapf+mapx*i+j)->coo.y = j;
+            (mapf+mapx*i+j)->abletag = IMPASSABLE;
         }
+    printf("Map Initialize Success.\n");
 
-        ret = CrossConfig( mapblock, &cross[i] );
-        mapblock[4][1] = IMPASSABLE;    //测试封闭(4,1)区域
-        switch(ret){
-        case -2:
-            printf("所设路口 %d 和地图已有路面有覆盖！\n",cross[i].roadid);
-            break;
-        case -1:
-            printf("所设路口 %d 坐标越界或道路id不合理！\n",cross[i].roadid);
-            break;
-        case 0:
-            printf("配置路口 %d 成功。\n",cross[i].roadid);
-            break;
-        default:
-            printf("FUCK ERROR!\n");
-            break;
-        }
-    }
+    /* 交叉路口初始化 */
+    //路口一
+    cross[0].roadid = crossid_init;
+    cross[0].coo.x = 25;
+    cross[0].coo.y = 25;
+    cross[0].halflength = 25;
+    cross[0].halfwidth = 10;
+    CrossInit( mapf, &cross[0], mapx, mapy );
+    //路口二
+    cross[1].roadid = crossid_init + 1;
+    cross[1].coo.x = 75;
+    cross[1].coo.y = 25;
+    cross[1].halflength = 25;
+    cross[1].halfwidth = 10;
+    CrossInit( mapf, &cross[1], mapx, mapy );
+
     return 0;
 }
 
-/*
-*交叉路口配置函数
-*input:地图，交叉路口
-*output:地图可达性
-*！Notice：未检测连通性
+/**
+*   交叉路口配置函数
+*   input:地图，交叉路口
+*   output:地图可达性
+*   ！Notice：未检测连通性
 */
-static int CrossConfig(int mapb[][MAPY], Cross *cross)
+static int CrossInit(MapFrame *mapf, Cross *cross, int mapx, int mapy)
 {
-    /* 获取交叉路口中心周围四个区块坐标*/
-    int left_x = cross->coo.x - 1;
-    int left_y = cross->coo.y;
-    int right_x = cross->coo.x + 1;
-    int right_y = cross->coo.y;
-    int up_x = cross->coo.x;
-    int up_y = cross->coo.y + 1;
-    int down_x =cross->coo.x;
-    int down_y = cross->coo.y - 1;
+    int i,j;
+    MapCoo bcoo1,bcoo2;
+    FILE *fp;
 
-    if(left_x >= 0 && left_y >= 0 && right_x >= 0 && right_y >= 0 &&
-       up_x >= 0 && up_y >= 0 && down_x >= 0 && down_y >= 0 && cross->roadid != 0)
-    {
-        if(mapb[cross->coo.x][cross->coo.y] == IMPASSABLE && mapb[left_x][left_y] == IMPASSABLE &&
-           mapb[right_x][right_y] == IMPASSABLE &&  mapb[up_x][up_y] == IMPASSABLE &&
-           mapb[down_x][down_y] == IMPASSABLE)
-        {
-            mapb[cross->coo.x][cross->coo.y] = PASSABLE;
-            mapb[left_x][left_y] = PASSABLE;
-            mapb[right_x][right_y] = PASSABLE;
-            mapb[up_x][up_y] = PASSABLE;
-            mapb[down_x][down_y] = PASSABLE;
-        }
-        else
-            return -2;  //有覆盖
+
+    /* 获取交叉路口边界点坐标*/
+    bcoo1.x = cross->coo.x - cross->halflength;
+    bcoo1.y = cross->coo.y - cross->halfwidth;
+    bcoo2.x = cross->coo.x - cross->halfwidth;
+    bcoo2.y = cross->coo.y - cross->halflength;
+
+    /* 边界检测 */
+    if(bcoo1.x < 0 || bcoo1.y < 0 || bcoo2.x < 0 || bcoo2.y < 0) {
+        printf("Road Initialize Failed, Out of Map.\n");
+        return -1;
     }
-    else
-        return -1;  //道路越界或道路id不合理
 
+    /* 配置道路可达性 */
+    for(i=bcoo1.x;i<=(bcoo1.x+2*cross->halflength);i++)
+        for(j=bcoo1.y;j<=(bcoo1.y+2*cross->halfwidth);j++)
+            (mapf+mapx*i+j)->abletag = PASSABLE;
+    for(i=bcoo2.x;i<=(bcoo2.x+2*cross->halfwidth);i++)
+        for(j=bcoo2.y;j<=(bcoo2.y+2*cross->halflength);j++)
+            (mapf+mapx*i+j)->abletag = PASSABLE;
+
+    /* 地图输出到文件 */
+    fp = fopen("mapdraw.txt", "w+");
+    for(j = mapy-1; j >=0 ; j--)
+    {
+        for(i = 0; i < mapx; i++)
+            if((mapf+mapx*i+j)->abletag == IMPASSABLE)
+                fprintf(fp,"*");
+            else
+                fprintf(fp," ");
+        fprintf(fp,"\n");
+    }
     return 0;
 }

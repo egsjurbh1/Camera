@@ -1,0 +1,223 @@
+# depslib dependency file v1.0
+1416902305 source:d:\project\lq\camera32\camera.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"camera.h"
+
+1416894471 d:\project\lq\camera32\camera.h
+	"map.h"
+	"object.h"
+
+1416898504 d:\project\lq\camera32\map.h
+
+1416795531 d:\project\lq\camera32\object.h
+	"map.h"
+
+1416902073 source:d:\project\lq\camera32\general.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"general.h"
+
+1416896092 d:\project\lq\camera32\general.h
+	"camera.h"
+	"object.h"
+
+1416883887 source:d:\project\lq\camera32\map.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"map.h"
+
+1416370300 source:d:\project\lq\camera32\object.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"object.h"
+
+1416883887 source:d:\project\lq\camera32\main.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"camera.h"
+	"map.h"
+	"object.h"
+	"general.h"
+
+1417594557 source:f:\camera32\camera.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"camera.h"
+
+1417592422 f:\camera32\camera.h
+	"map.h"
+	"object.h"
+	"system.h"
+
+1417505575 f:\camera32\map.h
+	"system.h"
+
+1417571849 f:\camera32\object.h
+	"map.h"
+	"system.h"
+
+1417594557 source:f:\camera32\general.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"general.h"
+	"system.h"
+
+1417511538 f:\camera32\general.h
+	"camera.h"
+	"object.h"
+	"system.h"
+
+1417594557 source:f:\camera32\main.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	"camera.h"
+	"map.h"
+	"object.h"
+	"general.h"
+	"system.h"
+
+1417594557 source:f:\camera32\map.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	"map.h"
+
+1417594557 source:f:\camera32\object.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"object.h"
+
+1417572453 f:\camera32\system.h
+
+1417594592 source:f:\camera32\system.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"system.h"
+
+1417594627 source:d:\project\c\camera32\general.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"general.h"
+	"system.h"
+
+1417511538 d:\project\c\camera32\general.h
+	"camera.h"
+	"object.h"
+	"system.h"
+
+1417592422 d:\project\c\camera32\camera.h
+	"map.h"
+	"object.h"
+	"system.h"
+
+1417505575 d:\project\c\camera32\map.h
+	"system.h"
+
+1417572453 d:\project\c\camera32\system.h
+
+1417571849 d:\project\c\camera32\object.h
+	"map.h"
+	"system.h"
+
+1417594611 source:d:\project\c\camera32\main.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"camera.h"
+	"map.h"
+	"object.h"
+	"general.h"
+	"system.h"
+
+1417594624 source:d:\project\c\camera32\map.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"map.h"
+
+1417594620 source:d:\project\c\camera32\object.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"object.h"
+
+1417595478 source:d:\project\c\camera32\camera.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"camera.h"
+
+1417595219 source:d:\project\c\camera32\system.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"system.h"
+

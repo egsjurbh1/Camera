@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="Camera" />
+		<Option title="Camera32" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="bin/Debug/Camera" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Debug/Camera32" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -16,7 +16,7 @@
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/Camera" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Release/Camera32" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -50,6 +50,14 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="object.h" />
+		<Unit filename="readconfig.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="readconfig.h" />
+		<Unit filename="system.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="system.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
