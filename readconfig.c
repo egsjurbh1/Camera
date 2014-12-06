@@ -1,7 +1,7 @@
 /** \brief 配置文件读取和解析
  *
  * \author lq
- * \update 141203
+ * \update 141204
  * \return
  *
  */
@@ -72,14 +72,15 @@ int readfile( char *filename, FileBuf *buf)
 
 /**< Prase buffer Function
 *   find keyname = keyvalue from buf
+*   return 1 success
 */
 int prasebuffer( const char *keyname, int *location, FileBuf *buf)
 {
     int i,flag;
     i = flag = 0;
-    while(*buf[i].keyname != NULL)
+    while( buf[i].keyname != NULL)
     {
-        if( !strcmp(&buf[i].keyname, keyname) ) {
+        if( !strcmp(buf[i].keyname, keyname) ) {
             *location = i;
             flag = 1;
             break;

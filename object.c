@@ -18,7 +18,6 @@
 static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy);
 static void MoveModeThread( void *arg );
 static int find_direction(Object *obj);
-static void waitdonothing( float timelength );
 static int moveto( MapFrame *mapf, Object *obj, MapCoo *nextco, int mapx, int mapy );
 static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy);
 static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys );
@@ -59,6 +58,26 @@ int ObjectInit( Object *obj, SystemPara *sys )
     obj[3].coo.x = 90;
     obj[3].coo.y = 25;
     obj[3].direction = EAST;
+    obj[4].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[4].coo.x = 90;
+    obj[4].coo.y = 25;
+    obj[4].direction = WEST;
+    obj[5].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[5].coo.x = 75;
+    obj[5].coo.y = 30;
+    obj[5].direction = NORTH;
+    obj[6].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[6].coo.x = 75;
+    obj[6].coo.y = 10;
+    obj[6].direction = SOUTH;
+    obj[7].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[7].coo.x = 25;
+    obj[7].coo.y = 10;
+    obj[7].direction = SOUTH;
+    obj[8].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
+    obj[8].coo.x = 25;
+    obj[8].coo.y = 30;
+    obj[8].direction = NORTH;
     return 0;
 }
 
@@ -396,20 +415,3 @@ static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy)
     return 1;
 }
 
-/*******************************************
-*   等待函数
-*   单位秒
-*****/
-static void waitdonothing( float timelength )
-{
-    clock_t tb,te;
-
-    tb = clock();
-    while(1)
-    {
-        te = clock();
-        if( abs(te - tb)/CLOCKS_PER_SEC >= timelength )
-            break;
-        Sleep(50);
-    }
-}

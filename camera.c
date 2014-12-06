@@ -207,7 +207,7 @@ static void NodeMsgThread( void *arg )
 /******反馈消息处理******/
 static void check_nodemsg(Node *node, SystemPara *sys)
 {
-    int i,n,j,nodeid;
+    int i,n,nodeid;
     int nodeid_init,nodenum;
     float strengthincre,strengthratio,maxsvalue,minsvalue;
     /* 取系统参数 */

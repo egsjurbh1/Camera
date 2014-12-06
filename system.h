@@ -7,6 +7,7 @@
 #define BROADCAST       2       //任务发布模式：广播
 #define NONEID          0       //无编号
 #define BUFFER          10      //buffer
+#define CONFIGNUM       100     //配置参数数量
 
 /* Map参数结构体 */
 typedef struct MapParametersStruct

@@ -1,8 +1,8 @@
 /** \brief Camera Networks Software Framework
  *
  * \author chinglee
- * \update 141203
- * \version v1.1.2
+ * \update 141204
+ * \version v1.2.0
  * \notice
  */
 
@@ -21,11 +21,11 @@
 int main()
 {
     int ret;
-    SystemPara SysPara;                         //系统参数
-    volatile MapFrame *MapBlock;                //地图
-    volatile Cross *CrossRoad;                  //路口
-    volatile Object *TrackObject;               //目标
-    volatile Node *CameraNode;                  //节点
+    SystemPara SysPara;                //系统参数
+    MapFrame *MapBlock;                //地图
+    Cross *CrossRoad;                  //路口
+    Object *TrackObject;               //目标
+    Node *CameraNode;                  //节点
 
     /* 系统参数初始化 */
     ret = SystemInit(&SysPara);
@@ -34,9 +34,13 @@ int main()
         return -9;
     }
 
-    /* 道路和地图配置初始化 */
+    /* 分配内存空间 */
     MapBlock = (MapFrame *)malloc( 2 * SysPara.Map.x_max * SysPara.Map.y_max * sizeof(MapFrame));
     CrossRoad = (Cross *)malloc( SysPara.Map.crossnum * sizeof(Cross));
+    CameraNode = (Node *)malloc( 3 * SysPara.Node.nodenum * sizeof(Node));  //防止内存不够！
+    TrackObject = (Object *)malloc( 3 * SysPara.Object.objectnum * sizeof(Object));
+
+    /* 道路和地图配置初始化 */
     ret = RoadMapInit(MapBlock, CrossRoad, &SysPara);
     if(ret) {
         printf("RoadMapInit Error!\n");
@@ -44,7 +48,6 @@ int main()
     }
 
     /* 摄像头节点初始化 */
-    CameraNode = (Node *)malloc( 3 * SysPara.Node.nodenum * sizeof(Node));  //防止内存不够！
     ret = CameraInit( CameraNode, CrossRoad, &SysPara );
     if(ret) {
         printf("CameraInit Error!\n");
@@ -52,7 +55,6 @@ int main()
     }
 
     /* 目标初始化 */
-    TrackObject = (Object *)malloc( 3 * SysPara.Object.objectnum * sizeof(Object));
     ret = ObjectInit( TrackObject, &SysPara );
     if(ret) {
         printf("ObjectInit Error!\n");
@@ -72,7 +74,7 @@ int main()
     OutputControl( CameraNode, TrackObject, &SysPara );
     sleep(1);
 
-    /* main主线程等待 */
+    /* 主线程等待 */
     while(1)
     {
         sleep(1);

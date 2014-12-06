@@ -62,13 +62,14 @@
 	"object.h"
 	"general.h"
 
-1417594557 source:f:\camera32\camera.c
+1417661100 source:f:\camera32\camera.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
 	<semaphore.h>
 	<time.h>
 	<math.h>
+	<windows.h>
 	"camera.h"
 
 1417592422 f:\camera32\camera.h
@@ -83,13 +84,14 @@
 	"map.h"
 	"system.h"
 
-1417594557 source:f:\camera32\general.c
+1417594627 source:f:\camera32\general.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
 	<semaphore.h>
 	<time.h>
 	<math.h>
+	<windows.h>
 	"general.h"
 	"system.h"
 
@@ -98,38 +100,41 @@
 	"object.h"
 	"system.h"
 
-1417594557 source:f:\camera32\main.c
+1417677177 source:f:\camera32\main.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
 	<semaphore.h>
 	<time.h>
+	<windows.h>
 	"camera.h"
 	"map.h"
 	"object.h"
 	"general.h"
 	"system.h"
 
-1417594557 source:f:\camera32\map.c
+1417672019 source:f:\camera32\map.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
 	<semaphore.h>
 	<time.h>
+	<windows.h>
 	"map.h"
 
-1417594557 source:f:\camera32\object.c
+1417677441 source:f:\camera32\object.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
 	<semaphore.h>
 	<time.h>
 	<math.h>
+	<windows.h>
 	"object.h"
 
-1417572453 f:\camera32\system.h
+1417656339 f:\camera32\system.h
 
-1417594592 source:f:\camera32\system.c
+1417662265 source:f:\camera32\system.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -138,6 +143,7 @@
 	<math.h>
 	<windows.h>
 	"system.h"
+	"readconfig.h"
 
 1417594627 source:d:\project\c\camera32\general.c
 	<stdio.h>
@@ -220,4 +226,16 @@
 	<math.h>
 	<windows.h>
 	"system.h"
+
+1417677558 source:f:\camera32\readconfig.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"readconfig.h"
+
+1417655857 f:\camera32\readconfig.h
 
