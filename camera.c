@@ -1,7 +1,7 @@
 /** \brief 摄像头节点
  *
  * \author lq
- * \update 141202
+ * \update 141223
  * \return
  *
  */
@@ -25,6 +25,7 @@ static void ObjcetDetect( Node *node, Object *obj, SystemPara *sys );
 static void post_task( Node *node, int i, SystemPara *sys );
 static int isinfov( Node *node, Object *obj);
 static int countUtility( Node *node, Object *obj, float *obju );
+static void node_pos_cfg(Node *node, Cross *cross, int mode);
 float count_communication(int flag, int type, float *ic, float taskcost, float feedbackcost);
 
 /**< 线程通信全局量 */
@@ -39,8 +40,8 @@ static volatile TaskInfo TaskMsg[MAXNODE][MAXOBJECT];
 *****/
 int CameraInit(Node *node, Cross *cross, SystemPara *sys)
 {
-    int i,j;
-    int nodenum,objectnum,commu_mode,fovhalfwidth,fovlength,firstnodeid;
+    int i,j,ret;
+    int nodenum,objectnum,commu_mode,fovhalfwidth,fovlength,firstnodeid,tasknum,systemmode;
     float strengthinit;
 
     /* 取系统参数 */
@@ -51,6 +52,8 @@ int CameraInit(Node *node, Cross *cross, SystemPara *sys)
     fovlength = sys->Node.fovlength;
     firstnodeid = sys->Node.nodeid_init;
     strengthinit = sys->Node.strengthinit;
+    tasknum = sys->Task.tasknum;
+    systemmode = sys->system_mode;
     /* NodeMsg消息初始化 */
     for( i = 0; i < nodenum; i++)
         for( j = 0; j < nodenum; j++)
@@ -67,6 +70,7 @@ int CameraInit(Node *node, Cross *cross, SystemPara *sys)
         node[i].nodeid = firstnodeid;   //节点ID,增量为1
         node[i].commu_mode = commu_mode;
         node[i].load = 0;
+        node[i].tasknum = 0;
         node[i].utility = 0;
         node[i].fovhalfwidth = fovhalfwidth;
         node[i].fovlength = fovlength;
@@ -84,42 +88,33 @@ int CameraInit(Node *node, Cross *cross, SystemPara *sys)
             node[i].StrackO[j].objectid = NONEID;
             node[i].StrackO[j].postnodeid = NONEID;
         }
+        //任务集
+        node[i].taskid = (int *)malloc( tasknum * sizeof(int));
+        node[i].taskid[0] = 0;
     }
 
-    /* 摄像头节点位置初始化*/
-    //节点C1(路口2 西)
-    node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
-    node[0].coo.y = cross[1].coo.y;
-    node[0].direction = WEST;
-    //节点C2(路口1 东)
-    node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
-    node[1].coo.y = cross[0].coo.y;
-    node[1].direction = EAST;
-    //节点C3(路口1 北)
-    node[2].coo.x = cross[0].coo.x;
-    node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
-    node[2].direction = NORTH;
-    //节点C4(路口1 西)
-    node[3].coo.x = cross[0].coo.x - cross[0].halfwidth;
-    node[3].coo.y = cross[0].coo.y;
-    node[3].direction = WEST;
-    //节点C5(路口1 南)
-    node[4].coo.x = cross[0].coo.x;
-    node[4].coo.y = cross[0].coo.y - cross[0].halfwidth;
-    node[4].direction = SOUTH;
-    //节点C6(路口2 北)
-    node[5].coo.x = cross[1].coo.x;
-    node[5].coo.y = cross[1].coo.y + cross[1].halfwidth;
-    node[5].direction = NORTH;
-    //节点C7(路口2 东)
-    node[6].coo.x = cross[1].coo.x + cross[1].halfwidth;
-    node[6].coo.y = cross[1].coo.y;
-    node[6].direction = EAST;
-    //节点C8(路口2 南)
-    node[7].coo.x = cross[1].coo.x;
-    node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
-    node[7].direction = SOUTH;
-    printf("Camera Node Initialize Success.\n");
+    switch(systemmode)
+    {
+        /* 跟踪模式摄像头节点位置初始化*/
+        case TRACK_MODE:
+            node_pos_cfg(node, cross, 1);
+            ret = 1;
+            break;
+        /* 任务分配模式摄像头节点位置初始化 */
+        case TASK_MODE:
+            node_pos_cfg(node, cross, 2);
+            ret = 1;
+            break;
+        default:
+            ret = 0;
+            break;
+    }
+
+    if(ret)
+        printf("Camera Node Initialize Success.\n");
+    else
+        printf("Camera Node Initialize Failed.\n");
+
     return 0;
 }
 
@@ -132,6 +127,11 @@ void CameraControl( Node *node, Object *obj, SystemPara *sys )
 {
     int i, ret, nodenum;
     nodenum = sys->Node.nodenum;
+    int systemmode = sys->system_mode;
+
+    //非跟踪模式
+    if( systemmode != TRACK_MODE)
+        return;
 
     CameraThreadArg nodemsgarg[nodenum], nodetaskarg[nodenum], objectdectart[nodenum];
     pthread_t nodemsgt[nodenum], nodetaskt[nodenum], objectdectt[nodenum];
@@ -570,3 +570,80 @@ static int countUtility( Node *node, Object *obj, float *obju )
     return 0;
 }
 
+/**< 节点位置配置 */
+static void node_pos_cfg(Node *node, Cross *cross, int mode)
+{
+    switch(mode)
+    {
+    case 1: /* 节点位置配置，模式一：标准放置 */
+        //节点C1(路口2 西)
+        node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
+        node[0].coo.y = cross[1].coo.y;
+        node[0].direction = WEST;
+        //节点C2(路口1 东)
+        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[1].coo.y = cross[0].coo.y;
+        node[1].direction = EAST;
+        //节点C3(路口1 北)
+        node[2].coo.x = cross[0].coo.x;
+        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
+        node[2].direction = NORTH;
+        //节点C4(路口1 西)
+        node[3].coo.x = cross[0].coo.x - cross[0].halfwidth;
+        node[3].coo.y = cross[0].coo.y;
+        node[3].direction = WEST;
+        //节点C5(路口1 南)
+        node[4].coo.x = cross[0].coo.x;
+        node[4].coo.y = cross[0].coo.y - cross[0].halfwidth;
+        node[4].direction = SOUTH;
+        //节点C6(路口2 北)
+        node[5].coo.x = cross[1].coo.x;
+        node[5].coo.y = cross[1].coo.y + cross[1].halfwidth;
+        node[5].direction = NORTH;
+        //节点C7(路口2 东)
+        node[6].coo.x = cross[1].coo.x + cross[1].halfwidth;
+        node[6].coo.y = cross[1].coo.y;
+        node[6].direction = EAST;
+        //节点C8(路口2 南)
+        node[7].coo.x = cross[1].coo.x;
+        node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
+        node[7].direction = SOUTH;
+        break;
+    case 2: /* 节点位置配置，模式二：含视域重合 */
+        //节点C1(路口1 东)
+        node[0].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[0].coo.y = cross[0].coo.y;
+        node[0].direction = EAST;
+        //节点C2(路口1 东)
+        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[1].coo.y = cross[0].coo.y;
+        node[1].direction = EAST;
+        //节点C3(路口1 北)
+        node[2].coo.x = cross[0].coo.x;
+        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
+        node[2].direction = NORTH;
+        //节点C4(路口1 北)
+        node[3].coo.x = cross[0].coo.x;
+        node[3].coo.y = cross[0].coo.y + cross[0].halfwidth;
+        node[3].direction = NORTH;
+        //节点C5(路口1 西)
+        node[4].coo.x = cross[0].coo.x - cross[0].halfwidth;
+        node[4].coo.y = cross[0].coo.y;
+        node[4].direction = WEST;
+        //节点C6(路口1 西)
+        node[5].coo.x = cross[0].coo.x - cross[0].halfwidth;
+        node[5].coo.y = cross[0].coo.y;
+        node[5].direction = WEST;
+        //节点C7(路口1 南)
+        node[6].coo.x = cross[0].coo.x;
+        node[6].coo.y = cross[0].coo.y - cross[0].halfwidth;
+        node[6].direction = SOUTH;
+        //节点C8(路口1 南)
+        node[7].coo.x = cross[0].coo.x;
+        node[7].coo.y = cross[0].coo.y - cross[0].halfwidth;
+        node[7].direction = SOUTH;
+        break;
+    default:
+        break;
+    }
+}

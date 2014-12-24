@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include "object.h"
+#include "task.h"
 #include "system.h"
 
 #define ONUM                        4       //输出文件数量
@@ -16,7 +17,7 @@ typedef struct FileThreadArgStruct
     SystemPara *sys;
 }FileThreadArg;
 
-extern void OutputControl( Node *node, Object *obj, SystemPara *sys );    //输出控制函数
+extern void OutputControl( Node *node, Object *obj, Task *task, SystemPara *sys );    //输出控制函数
 
 #endif // _GENERAL_H
 

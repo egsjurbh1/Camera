@@ -1,8 +1,8 @@
 /** \brief Camera Networks Software Framework
  *
  * \author chinglee
- * \update 141204
- * \version v1.2.0
+ * \update 141224
+ * \version v1.3.4
  * \notice
  */
 
@@ -17,6 +17,7 @@
 #include "object.h"
 #include "general.h"
 #include "system.h"
+#include "task.h"
 
 int main()
 {
@@ -26,6 +27,7 @@ int main()
     Cross *CrossRoad;                  //路口
     Object *TrackObject;               //目标
     Node *CameraNode;                  //节点
+    Task *AllocateTask;                //任务
 
     /* 系统参数初始化 */
     ret = SystemInit(&SysPara);
@@ -36,9 +38,10 @@ int main()
 
     /* 分配内存空间 */
     MapBlock = (MapFrame *)malloc( 2 * SysPara.Map.x_max * SysPara.Map.y_max * sizeof(MapFrame));
-    CrossRoad = (Cross *)malloc( SysPara.Map.crossnum * sizeof(Cross));
-    CameraNode = (Node *)malloc( 3 * SysPara.Node.nodenum * sizeof(Node));  //防止内存不够！
+    CrossRoad = (Cross *)malloc( 2 * SysPara.Map.crossnum * sizeof(Cross));
+    CameraNode = (Node *)malloc( 5 * SysPara.Node.nodenum * sizeof(Node));  //防止内存不够！
     TrackObject = (Object *)malloc( 3 * SysPara.Object.objectnum * sizeof(Object));
+    AllocateTask = (Task *)malloc(3 * SysPara.Task.tasknum * sizeof(Task) );
 
     /* 道路和地图配置初始化 */
     ret = RoadMapInit(MapBlock, CrossRoad, &SysPara);
@@ -60,7 +63,15 @@ int main()
         printf("ObjectInit Error!\n");
         return -3;
     }
-    printf("Init Success!\n");
+
+    /* 任务初始化 */
+    ret = TaskInit( AllocateTask, &SysPara );
+    if(ret) {
+        printf("TaskInit Error!\n");
+        return -4;
+    }
+
+    printf("Init Success! System Mode: %d\n", SysPara.system_mode);
 
     /* 摄像头节点总控 */
     CameraControl( CameraNode, TrackObject, &SysPara );
@@ -70,14 +81,29 @@ int main()
     ObjectMovement( MapBlock, CrossRoad, TrackObject, &SysPara );
     sleep(1);
 
-    /* 输出总控 */
-    OutputControl( CameraNode, TrackObject, &SysPara );
+    /* 任务分配总控 */
+    TaskAllocation( AllocateTask, CameraNode, &SysPara );
     sleep(1);
 
-    /* 主线程等待 */
-    while(1)
+    /* 输出总控 */
+    OutputControl( CameraNode, TrackObject, AllocateTask, &SysPara );
+    sleep(1);
+
+    /* 主线程模式判断 */
+    switch(SysPara.system_mode)
     {
-        sleep(1);
+    case TRACK_MODE:
+        while(1)
+        {
+            sleep(1);
+        }
+        break;
+    case TASK_MODE:
+        printf("End: Task Allocation Success!\n");
+        break;
+    default:
+        printf("End: No Running Mode!\n");
+        break;
     }
 
     return 0;

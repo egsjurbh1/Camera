@@ -1,7 +1,7 @@
 /** \brief 系统全局参数配置
  *
  * \author lq
- * \update 141204
+ * \update 141222
  * \return
  *
  */
@@ -135,7 +135,21 @@ static int fileconfig( SystemPara *sys )
     if(ret[26])
         sys->Node.commu_mode = atoi(buf[location].keyvalue);
 
-    for(i = 0; i < 27; i++)
+    /* Task */
+    ret[27] = prasebuffer( "taskid_init", &location, buf);
+    if(ret[27])
+        sys->Task.taskid_init = atoi(buf[location].keyvalue);
+    ret[28] = prasebuffer( "tasknum", &location, buf);
+    if(ret[28])
+        sys->Task.tasknum = atoi(buf[location].keyvalue);
+    ret[29] = prasebuffer( "system_mode", &location, buf);
+    if(ret[29])
+        sys->system_mode = atoi(buf[location].keyvalue);
+    ret[30] = prasebuffer( "method_type", &location, buf);
+    if(ret[30])
+        sys->Task.method_type = atoi(buf[location].keyvalue);
+
+    for(i = 0; i < 31; i++)
         res = res & ret[i];
 
     if(res)
@@ -146,6 +160,7 @@ static int fileconfig( SystemPara *sys )
 
 static int defaultconfig( SystemPara *sys )
 {
+    sys->system_mode = TRACK_MODE;      //系统运行模式
     /* File */
     sys->writecycle_cmmu = 15;          //统计通信代价的写入周期（秒）
     sys->writecycle_instantc = 1;       //瞬时通信写入周期（秒）
@@ -177,7 +192,10 @@ static int defaultconfig( SystemPara *sys )
     sys->Node.fovhalfwidth = 5;         //视域半宽
     sys->Node.fovlength = 10;           //视域长度
     sys->Node.commu_mode = MULTICAST;   //通信方式
-
+    /* Task */
+    sys->Task.taskid_init = 10001;      //任务ID起始编号
+    sys->Task.tasknum = 6;              //任务总数
+    sys->Task.method_type = METHOD_TQTA;//TQTA方法
     return 0;
 }
 

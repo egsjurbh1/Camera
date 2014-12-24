@@ -45,11 +45,13 @@ typedef struct NodeStruct
     int fovhalfwidth;               //视域半宽
     int direction;                  //监控方向
     int commu_mode;                 //发布任务的方式 MULTICAST,BROADCAST
+    int tasknum;                    //执行任务数量
     float load;                     //节点负载
     float utility;                  //节点效用
     float *rstrength;               //节点关系强度表
     TaskSet *SdetectO;              //目标跟踪集
     TaskSet *StrackO;               //跟踪任务集
+    int *taskid;                    //任务集
 }Node;
 
 /* 节点反馈消息处理线程参数结构体 */

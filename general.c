@@ -1,7 +1,7 @@
 /** \brief 输出
  *
  * \author lq
- * \update 141202
+ * \update 141224
  * \return
  *
  */
@@ -17,11 +17,13 @@
 #include "system.h"
 
 static void WriteOutfileThread(void *arg);
-static void writeoutfile(Node *node, Object *obj, SystemPara *sys);
+static void trackmode_writeoutfile(Node *node, Object *obj, SystemPara *sys);
 static int count_utility(float *ic, Node *node, int nodenum);
+static int taskmode_writeoutfile(Node *node, Task *task, SystemPara *sys);
+static void statistics_r_taskallocation(float *u_system, float *droprate, Node *node, Task *task, int nodenum, int tasknum);
 
 /**< 输出总控 */
-void OutputControl( Node *node, Object *obj, SystemPara *sys )
+void OutputControl( Node *node, Object *obj, Task *task, SystemPara *sys )
 {
     int ret;
 
@@ -37,19 +39,39 @@ void OutputControl( Node *node, Object *obj, SystemPara *sys )
     filearg.node = node;
     filearg.object = obj;
     filearg.sys = sys;
-    /* 创建写文件线程 */
-    ret = pthread_create(&file_output, &attr, (void *)WriteOutfileThread, &filearg);
-    if(ret != 0) {
-        printf("Create file_output error!\n");
-        exit(1);
+
+    //写文件
+    switch(sys->system_mode)
+    {
+    case TRACK_MODE:
+        /* 跟踪模式：创建写文件线程 */
+        ret = pthread_create(&file_output, &attr, (void *)WriteOutfileThread, &filearg);
+        if(ret != 0) {
+            printf("Create file_output error!\n");
+            exit(1);
+        }
+        sleep(1);
+        printf("WriteOutFile Thread Created.\n");
+        break;
+    case TASK_MODE:
+        /* 任务分配模式：写文件*/
+        ret = taskmode_writeoutfile( node, task, sys);
+        if(ret != 0) {
+            printf("Create file_output error!\n");
+            exit(1);
+        }
+        sleep(1);
+        printf("WriteOutFile Finished.\n");
+        break;
+    default:
+        break;
     }
-    sleep(1);
-    printf("WriteOutFile Thread Created.\n");
+
     //release thread attribute
     pthread_attr_destroy(&attr);
 }
 
-/**< 写文件线程 */
+/**< 跟踪模式：写文件线程 */
 static void WriteOutfileThread(void *arg)
 {
     //接口参数
@@ -65,11 +87,11 @@ static void WriteOutfileThread(void *arg)
     sys = psarg->sys;
 
     //写文件
-    writeoutfile(node, obj, sys);
+    trackmode_writeoutfile(node, obj, sys);
 }
 
-/**< 写文件处理函数 */
-static void writeoutfile(Node *node, Object *obj, SystemPara *sys)
+/**< 跟踪模式：写文件处理函数 */
+static void trackmode_writeoutfile(Node *node, Object *obj, SystemPara *sys)
 {
     int i,j;
     int nodenum, writecycle_instantc, writecycle_strength, writecycle_commu;
@@ -188,6 +210,55 @@ static void writeoutfile(Node *node, Object *obj, SystemPara *sys)
         fclose(fps[i]);
 }
 
+/**< 任务分配模式：写文件函数 */
+static int taskmode_writeoutfile(Node *node, Task *task, SystemPara *sys)
+{
+    FILE *fp;
+    time_t old_it;
+    struct tm *timei;
+    int i, j, nodenum, tasknum;
+    float u_system, droprate;
+
+    nodenum = sys->Node.nodenum;
+    tasknum = sys->Task.tasknum;
+
+    fp = fopen("taskallocation.txt", "w+");
+    fprintf(fp, "任务分配：\t\n");
+
+    time(&old_it);
+    timei = localtime(&old_it);
+    fprintf(fp, "%s\t\n", asctime(timei));   //当前时间
+
+    fprintf(fp, "节点ID\t任务集合\t\n");
+    for(i = 0; i < nodenum; ++i)
+    {
+        fprintf(fp, "%d\t", node[i].nodeid);
+        j = 0;
+        while(node[i].taskid[j] != 0)
+        {
+            fprintf(fp, "%d\t", node[i].taskid[j]);
+            ++j;
+        }
+        fprintf(fp, "\n");
+    }
+
+    fprintf(fp, "\n节点ID\t负载\t\n");
+    for(i = 0; i < nodenum; ++i)
+        fprintf(fp, "%d\t%f\t\n", node[i].nodeid, node[i].load);
+
+    fprintf(fp, "\n任务ID\t执行节点\t状态\t消耗\t转移\t\n");
+    for(i = 0; i < tasknum; ++i)
+        fprintf(fp, "%d\t%d\t%d\t%.2f\t%d\t\n", task[i].id, task[i].execv_node, task[i].state,
+                task[i].res_cost, task[i].trans_flag);
+    //统计结果
+    statistics_r_taskallocation( &u_system, &droprate, node, task, nodenum, tasknum );
+    fprintf(fp, "\n系统资源利用率\t任务丢弃率\t\n");
+    fprintf(fp, "%.3f\t%.3f\t\n", u_system, droprate);
+
+    fclose(fp);
+    return 0;
+}
+
 /*****Utility*****/
 /**
  */
@@ -200,5 +271,27 @@ static int count_utility(float *ic, Node *node, int nodenum)
     return 0;
 }
 
+/**< 任务分配统计结果 */
+static void statistics_r_taskallocation(float *u_system, float *droprate, Node *node, Task *task, int nodenum, int tasknum)
+{
+    int i;
+    float sum = 0;
+    int dropnum = 0;
+
+    for(i = 0; i < nodenum; ++i)
+    {
+        sum += node[i].load;
+    }
+    //系统资源利用率
+    *u_system = sum / nodenum * 1;
+
+    for(i = 0; i < tasknum; ++i)
+    {
+        if(task[i].state == FAILEDT)
+            ++dropnum;
+    }
+    //任务丢弃率
+    *droprate = dropnum / tasknum;
+}
 
 

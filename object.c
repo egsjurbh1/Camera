@@ -1,7 +1,7 @@
 /** \brief 运动目标
  *
  * \author lq
- * \update 141201
+ * \update 141222
  * \return
  *
  */
@@ -29,9 +29,14 @@ static void active_move( Object *obj, MapFrame *mapf, Cross *cross, SystemPara *
 int ObjectInit( Object *obj, SystemPara *sys )
 {
     int i;
-    int objectnum_init,objectnum;
+    int objectnum_init,objectnum,systemmode;
     objectnum = sys->Object.objectnum;
     objectnum_init = sys->Object.objectid_init;
+    systemmode = sys->system_mode;
+
+    //非跟踪模式
+    if( systemmode != TRACK_MODE)
+        return 0;
 
     //初始化参数
     for( i = 0; i < objectnum; i++)
@@ -88,8 +93,13 @@ int ObjectInit( Object *obj, SystemPara *sys )
 ****/
 void ObjectMovement( MapFrame *mapf, Cross *cross, Object *obj, SystemPara *sys )
 {
-    int i, ret, objectnum;
+    int i, ret, objectnum, systemmode;
     objectnum = sys->Object.objectnum;
+    systemmode = sys->system_mode;
+
+    /* 非跟踪模式 */
+    if( systemmode != TRACK_MODE)
+        return;
 
     pthread_t objectthread[objectnum];
     pthread_attr_t attr;

@@ -9,6 +9,11 @@
 #define BUFFER          10      //buffer
 #define CONFIGNUM       100     //配置参数数量
 
+#define TRACK_MODE      1       //跟踪目标模式
+#define TASK_MODE       2       //任务分配模式
+
+#define METHOD_TQTA     1       //TQTA方法
+
 /* Map参数结构体 */
 typedef struct MapParametersStruct
 {
@@ -47,15 +52,25 @@ typedef struct NodeParametersStruct
     float feedbackcost;     //反馈消息通信权重
 }NodePara;
 
+/* Task参数结构体 */
+typedef struct TaskParametersStruct
+{
+    int tasknum;                  //目标数量
+    int taskid_init;              //目标ID起始编号
+    int method_type;              //任务分配方法
+}TaskPara;
+
 /* 系统参数结构体 */
 typedef struct SystemParametersStruct
 {
+    int system_mode;            //系统运行模式
     int writecycle_cmmu;        //统计通信代价的写入周期（秒）
     int writecycle_strength;    //节点强度写入周期（秒）
     int writecycle_instantc;    //瞬时通信写入周期（秒）
     MapPara Map;
     ObjectPara Object;
     NodePara Node;
+    TaskPara Task;
 }SystemPara;
 
 extern int SystemInit( SystemPara *sys);                 //系统参数初始化
