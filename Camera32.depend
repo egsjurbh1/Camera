@@ -451,3 +451,114 @@
 	<windows.h>
 	"task.h"
 
+1419918977 source:d:\project\c\camera\camera.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"camera.h"
+
+1419321525 d:\project\c\camera\camera.h
+	"map.h"
+	"object.h"
+	"system.h"
+
+1417505575 d:\project\c\camera\map.h
+	"system.h"
+
+1419834965 d:\project\c\camera\system.h
+
+1417571849 d:\project\c\camera\object.h
+	"map.h"
+	"system.h"
+
+1420005151 source:d:\project\c\camera\general.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"general.h"
+	"system.h"
+
+1419401613 d:\project\c\camera\general.h
+	"camera.h"
+	"object.h"
+	"task.h"
+	"system.h"
+
+1419906113 d:\project\c\camera\task.h
+	"map.h"
+	"camera.h"
+
+1417672019 source:d:\project\c\camera\map.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"map.h"
+
+1419386556 source:d:\project\c\camera\object.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"object.h"
+
+1417677558 source:d:\project\c\camera\readconfig.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	"readconfig.h"
+
+1417655857 d:\project\c\camera\readconfig.h
+
+1419297540 source:d:\project\c\camera\system.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"system.h"
+	"readconfig.h"
+
+1420003028 source:d:\project\c\camera\task.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	"task.h"
+
+1419928623 source:d:\project\c\camera\main.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<semaphore.h>
+	<time.h>
+	<windows.h>
+	"camera.h"
+	"map.h"
+	"object.h"
+	"general.h"
+	"system.h"
+	"task.h"
+

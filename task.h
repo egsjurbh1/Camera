@@ -1,6 +1,7 @@
 #ifndef _TASK_H
 #define _TASK_H
 
+#define FAILTON     3       //分配但无法执行
 #define FAILEDT     2       //分配失败
 #define RUNNING     1       //分配成功
 #define STANDING    0       //未分配

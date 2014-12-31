@@ -1,8 +1,8 @@
 /** \brief Camera Networks Software Framework
  *
  * \author chinglee
- * \update 141224
- * \version v1.3.4
+ * \update 141231
+ * \version v1.3.6
  * \notice
  */
 
@@ -100,6 +100,7 @@ int main()
         break;
     case TASK_MODE:
         printf("End: Task Allocation Success!\n");
+        system("taskallocation.txt");   //打开文件结果
         break;
     default:
         printf("End: No Running Mode!\n");

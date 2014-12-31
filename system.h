@@ -13,6 +13,8 @@
 #define TASK_MODE       2       //任务分配模式
 
 #define METHOD_TQTA     1       //TQTA方法
+#define METHOD_QTA      2       //QTA方法
+#define METHOD_TA       3       //TA方法
 
 /* Map参数结构体 */
 typedef struct MapParametersStruct

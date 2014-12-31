@@ -1,7 +1,7 @@
 /** \brief 输出
  *
  * \author lq
- * \update 141224
+ * \update 141231
  * \return
  *
  */
@@ -20,7 +20,7 @@ static void WriteOutfileThread(void *arg);
 static void trackmode_writeoutfile(Node *node, Object *obj, SystemPara *sys);
 static int count_utility(float *ic, Node *node, int nodenum);
 static int taskmode_writeoutfile(Node *node, Task *task, SystemPara *sys);
-static void statistics_r_taskallocation(float *u_system, float *droprate, Node *node, Task *task, int nodenum, int tasknum);
+static void statistics_r_taskallocation(float *u_system, float *droprate, int *transnum, Node *node, Task *task, int nodenum, int tasknum);
 
 /**< 输出总控 */
 void OutputControl( Node *node, Object *obj, Task *task, SystemPara *sys )
@@ -216,14 +216,15 @@ static int taskmode_writeoutfile(Node *node, Task *task, SystemPara *sys)
     FILE *fp;
     time_t old_it;
     struct tm *timei;
-    int i, j, nodenum, tasknum;
+    int i, j, nodenum, tasknum, transnum, methodtype;
     float u_system, droprate;
 
     nodenum = sys->Node.nodenum;
     tasknum = sys->Task.tasknum;
+    methodtype = sys->Task.method_type;
 
     fp = fopen("taskallocation.txt", "w+");
-    fprintf(fp, "任务分配：\t\n");
+    fprintf(fp, "任务分配方法：%d \t\n", methodtype);
 
     time(&old_it);
     timei = localtime(&old_it);
@@ -251,11 +252,12 @@ static int taskmode_writeoutfile(Node *node, Task *task, SystemPara *sys)
         fprintf(fp, "%d\t%d\t%d\t%.2f\t%d\t\n", task[i].id, task[i].execv_node, task[i].state,
                 task[i].res_cost, task[i].trans_flag);
     //统计结果
-    statistics_r_taskallocation( &u_system, &droprate, node, task, nodenum, tasknum );
-    fprintf(fp, "\n系统资源利用率\t任务丢弃率\t\n");
-    fprintf(fp, "%.3f\t%.3f\t\n", u_system, droprate);
+    statistics_r_taskallocation( &u_system, &droprate, &transnum, node, task, nodenum, tasknum );
+    fprintf(fp, "\n系统资源利用率\t任务丢弃率\t任务转移次数\t\n");
+    fprintf(fp, "%.3f\t %.3f\t %d\t\n", u_system, droprate, transnum);
 
     fclose(fp);
+
     return 0;
 }
 
@@ -272,11 +274,12 @@ static int count_utility(float *ic, Node *node, int nodenum)
 }
 
 /**< 任务分配统计结果 */
-static void statistics_r_taskallocation(float *u_system, float *droprate, Node *node, Task *task, int nodenum, int tasknum)
+static void statistics_r_taskallocation(float *u_system, float *droprate, int *transnum, Node *node, Task *task, int nodenum, int tasknum)
 {
     int i;
     float sum = 0;
     int dropnum = 0;
+    int trans_num = 0;
 
     for(i = 0; i < nodenum; ++i)
     {
@@ -287,11 +290,15 @@ static void statistics_r_taskallocation(float *u_system, float *droprate, Node *
 
     for(i = 0; i < tasknum; ++i)
     {
-        if(task[i].state == FAILEDT)
+        if(task[i].state == FAILEDT || task[i].state == FAILTON)
             ++dropnum;
+        if(task[i].trans_flag == 1)
+            ++trans_num;
     }
     //任务丢弃率
-    *droprate = dropnum / tasknum;
+    *droprate = (float)dropnum / (float)tasknum;    //int型强制转float参与计算
+    //任务转移次数
+    *transnum = trans_num;
 }
 
 

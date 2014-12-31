@@ -102,7 +102,7 @@ int CameraInit(Node *node, Cross *cross, SystemPara *sys)
             break;
         /* 任务分配模式摄像头节点位置初始化 */
         case TASK_MODE:
-            node_pos_cfg(node, cross, 2);
+            node_pos_cfg(node, cross, 1);
             ret = 1;
             break;
         default:
@@ -575,7 +575,7 @@ static void node_pos_cfg(Node *node, Cross *cross, int mode)
 {
     switch(mode)
     {
-    case 1: /* 节点位置配置，模式一：标准放置 */
+    case 1: /* 节点位置配置，模式一：每个道路2个，交叉路口8个 */
         //节点C1(路口2 西)
         node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
         node[0].coo.y = cross[1].coo.y;
@@ -608,6 +608,38 @@ static void node_pos_cfg(Node *node, Cross *cross, int mode)
         node[7].coo.x = cross[1].coo.x;
         node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
         node[7].direction = SOUTH;
+        //节点C9(路口2 西)
+        node[8].coo.x = cross[1].coo.x - cross[1].halfwidth;
+        node[8].coo.y = cross[1].coo.y;
+        node[8].direction = WEST;
+        //节点C10(路口1 东)
+        node[9].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[9].coo.y = cross[0].coo.y;
+        node[9].direction = EAST;
+        //节点C11(路口1 北)
+        node[10].coo.x = cross[0].coo.x;
+        node[10].coo.y = cross[0].coo.y + cross[0].halfwidth;
+        node[10].direction = NORTH;
+        //节点C12(路口1 西)
+        node[11].coo.x = cross[0].coo.x - cross[0].halfwidth;
+        node[11].coo.y = cross[0].coo.y;
+        node[11].direction = WEST;
+        //节点C13(路口1 南)
+        node[12].coo.x = cross[0].coo.x;
+        node[12].coo.y = cross[0].coo.y - cross[0].halfwidth;
+        node[12].direction = SOUTH;
+        //节点C14(路口2 北)
+        node[13].coo.x = cross[1].coo.x;
+        node[13].coo.y = cross[1].coo.y + cross[1].halfwidth;
+        node[13].direction = NORTH;
+        //节点C15(路口2 东)
+        node[14].coo.x = cross[1].coo.x + cross[1].halfwidth;
+        node[14].coo.y = cross[1].coo.y;
+        node[14].direction = EAST;
+        //节点C16(路口2 南)
+        node[15].coo.x = cross[1].coo.x;
+        node[15].coo.y = cross[1].coo.y - cross[1].halfwidth;
+        node[15].direction = SOUTH;
         break;
     case 2: /* 节点位置配置，模式二：含视域重合 */
         //节点C1(路口1 东)
@@ -643,6 +675,23 @@ static void node_pos_cfg(Node *node, Cross *cross, int mode)
         node[7].coo.y = cross[0].coo.y - cross[0].halfwidth;
         node[7].direction = SOUTH;
         break;
+    case 3: /* 节点位置配置，模式三：场景一四节点监控一条道路 */
+        //节点C1(路口1 东)
+        node[0].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[0].coo.y = cross[0].coo.y;
+        node[0].direction = EAST;
+        //节点C2(路口1 东)
+        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[1].coo.y = cross[0].coo.y;
+        node[1].direction = EAST;
+        //节点C3(路口1 东)
+        node[2].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[2].coo.y = cross[0].coo.y;
+        node[2].direction = EAST;
+        //节点C4(路口1 东)
+        node[3].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[3].coo.y = cross[0].coo.y;
+        node[3].direction = EAST;
     default:
         break;
     }
