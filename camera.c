@@ -97,7 +97,7 @@ int CameraInit(Node *node, Cross *cross, SystemPara *sys)
     {
         /* 跟踪模式摄像头节点位置初始化*/
         case TRACK_MODE:
-            node_pos_cfg(node, cross, 1);
+            node_pos_cfg(node, cross, 4);
             ret = 1;
             break;
         /* 任务分配模式摄像头节点位置初始化 */
@@ -178,7 +178,7 @@ void CameraControl( Node *node, Object *obj, SystemPara *sys )
             exit(1);
         }
         sleep(1);
-        printf("Node:%d Thread Created.\n", node[i].nodeid );
+        printf("Node:%d Created.\n", node[i].nodeid );
     }
     //release thread attribute
     pthread_attr_destroy(&attr);
@@ -692,6 +692,41 @@ static void node_pos_cfg(Node *node, Cross *cross, int mode)
         node[3].coo.x = cross[0].coo.x + cross[0].halfwidth;
         node[3].coo.y = cross[0].coo.y;
         node[3].direction = EAST;
+        break;
+    case 4:
+        //节点C1(路口2 西)
+        node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
+        node[0].coo.y = cross[1].coo.y;
+        node[0].direction = WEST;
+        //节点C2(路口1 东)
+        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
+        node[1].coo.y = cross[0].coo.y;
+        node[1].direction = EAST;
+        //节点C3(路口1 北)
+        node[2].coo.x = cross[0].coo.x;
+        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
+        node[2].direction = NORTH;
+        //节点C4(路口1 西)
+        node[3].coo.x = cross[0].coo.x - cross[0].halfwidth;
+        node[3].coo.y = cross[0].coo.y;
+        node[3].direction = WEST;
+        //节点C5(路口1 南)
+        node[4].coo.x = cross[0].coo.x;
+        node[4].coo.y = cross[0].coo.y - cross[0].halfwidth;
+        node[4].direction = SOUTH;
+        //节点C6(路口2 北)
+        node[5].coo.x = cross[1].coo.x;
+        node[5].coo.y = cross[1].coo.y + cross[1].halfwidth;
+        node[5].direction = NORTH;
+        //节点C7(路口2 东)
+        node[6].coo.x = cross[1].coo.x + cross[1].halfwidth;
+        node[6].coo.y = cross[1].coo.y;
+        node[6].direction = EAST;
+        //节点C8(路口2 南)
+        node[7].coo.x = cross[1].coo.x;
+        node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
+        node[7].direction = SOUTH;
+        break;
     default:
         break;
     }

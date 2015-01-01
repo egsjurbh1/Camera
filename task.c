@@ -1,7 +1,7 @@
 /** \brief 任务分配
  *
  * \author lq
- * \update 141231
+ * \update 150101
  * \return
  *
  */
@@ -22,176 +22,45 @@ static void related_groups_generation( Task *task, Node *node, int tasknum, int 
 static int isQosSatisfied( Node *node, Task *task, Task *tasktest, int taskid_init );
 static void addtasktonode(Node *node, Task *task);
 static void setQoS(Task *task, float qos_para);
-static void setTask(Task *task, int coox, int cooy, float res_cost, int *tasknum, float qos_para);
+static void setTask(SystemPara *sys, Task *task, int coox, int cooy, float res_cost);
+static void setTaskArray(int arraynum, SystemPara *sys, Task *task, int coox, int cooy, float *res_cost);
 
 /***************************************************************
 *   任务初始化函数
 *****/
 int TaskInit( Task *task, SystemPara *sys )
 {
-    int i;
-    int tasknum, taskid_init;
-    static int settasknum = 0;
-    const float qos_para = 0.9;
+    //float rescostarray[10];
+    int sysmode = sys->system_mode;
 
-    taskid_init = sys->Task.taskid_init;
-    tasknum = sys->Task.tasknum;
+    if(sysmode != TASK_MODE)
+        return 0;
 
-    //初始化参数
-    for( i = 0; i < tasknum; ++i )
-    {
-        task[i].id = taskid_init + i;
-        task[i].execv_node = NONEID;
-        task[i].state = STANDING;
-        task[i].trans_flag = 0;
-        task[i].relatedgroup = (int *)malloc(tasknum * sizeof(int));
-    }
-
-    //任务参数配置
+    /* 任务参数配置 */
     ///路口一(15,25)
-    for(i = 0; i < 9; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 15, 25, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 15, 25, 0.2, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 15, 25, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray1[] = {0.06, 0.2, 0.5};
+    setTaskArray(3, sys, task, 15, 25, rescostarray1);
     ///路口一(25,15)
-    for(i = 0; i < 9; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 25, 15, 0.03, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 25, 15, 0.3, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 25, 15, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray2[] = {0.03, 0.3, 0.5};
+    setTaskArray(3, sys, task, 25, 15, rescostarray2);
     ///路口一(25,35)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 25, 35, 0.05, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 25, 35, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 25, 35, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray3[] = {0.05, 0.25, 0.5};
+    setTaskArray(1, sys, task, 25, 35, rescostarray3);
     ///路口一(35,25)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 35, 25, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 35, 25, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 35, 25, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray4[] = {0.06, 0.25, 0.5};
+    setTaskArray(1, sys, task, 35, 25, rescostarray4);
     ///路口二(65,25)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 65, 25, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 65, 25, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 65, 25, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray5[] = {0.06, 0.25, 0.5};
+    setTaskArray(1, sys, task, 65, 25, rescostarray5);
     ///路口二(75,15)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 75, 15, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 75, 15, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 75, 15, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray6[] = {0.06, 0.25, 0.5};
+    setTaskArray(1, sys, task, 75, 15, rescostarray6);
     ///路口二(85,25)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 85, 25, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 85, 25, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 85, 25, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray7[] = {0.06, 0.25, 0.5};
+    setTaskArray(1, sys, task, 85, 25, rescostarray7);
     ///路口二(75,35)
-    for(i = 0; i < 3; ++i)
-    {
-        switch(i%3)
-        {
-        case 0:
-            setTask(task, 75, 35, 0.06, &settasknum, qos_para);
-            break;
-        case 1:
-            setTask(task, 75, 35, 0.25, &settasknum, qos_para);
-            break;
-        case 2:
-            setTask(task, 75, 35, 0.5, &settasknum, qos_para);
-            break;
-        default:
-            break;
-        }
-    }
+    float rescostarray8[] = {0.05, 0.24, 0.5};
+    setTaskArray(1, sys, task, 75, 35, rescostarray8);
 
     return 0;
 }
@@ -203,13 +72,17 @@ int TaskInit( Task *task, SystemPara *sys )
 ****/
 void TaskAllocation( Task *task, Node *node, SystemPara *sys )
 {
-    int ret, methodtype, tasknum, nodenum, nodeid_init, taskid_init;
+    int ret, methodtype, tasknum, nodenum, nodeid_init, taskid_init, sysmode;
 
     methodtype = sys->Task.method_type;
     tasknum = sys->Task.tasknum;
     nodenum = sys->Node.nodenum;
     nodeid_init = sys->Node.nodeid_init;
     taskid_init = sys->Task.taskid_init;
+    sysmode = sys->system_mode;
+
+    if(sysmode != TASK_MODE)
+        return;
 
     switch(methodtype)
     {
@@ -237,8 +110,6 @@ void TaskAllocation( Task *task, Node *node, SystemPara *sys )
     default:
         break;
     }
-
-
 }
 
 /*************************************
@@ -322,9 +193,9 @@ static int TAmethod_TQTA( Task *task, Node *node, int tasknum, int nodenum, int 
 *************************************/
 static int TAmethod_QTA( Task *task, Node *node, int tasknum, int nodenum, int nodeid_init, int taskid_init)
 {
-    int i,j,knode,jnode;
+    int i,knode;
     int *reg;
-    float minres,maxv;
+    float minres;
     //任务相关组生成，任务队列生成
     related_groups_generation(task, node, tasknum, nodenum);
     for(i = 0; i < tasknum; ++i)
@@ -367,9 +238,9 @@ static int TAmethod_QTA( Task *task, Node *node, int tasknum, int nodenum, int n
 *************************************/
 static int TAmethod_TA( Task *task, Node *node, int tasknum, int nodenum, int nodeid_init, int taskid_init)
 {
-    int i,j,knode,jnode;
+    int i,knode;
     int *reg;
-    float minres,maxv;
+    float minres;
     //任务相关组生成，任务队列生成
     related_groups_generation(task, node, tasknum, nodenum);
     for(i = 0; i < tasknum; ++i)
@@ -502,13 +373,55 @@ static void setQoS(Task *task, float qos_para)
 }
 
 /**< Set Task */
-static void setTask(Task *task, int coox, int cooy, float res_cost, int *tasknum, float qos_para)
+static void setTask(SystemPara *sys, Task *task, int coox, int cooy, float res_cost)
 {
-    task[*tasknum].coo.x = coox;
-    task[*tasknum].coo.y = cooy;
-    task[*tasknum].res_cost = res_cost;
-    setQoS(&task[*tasknum], qos_para);
+    int tasknum, taskid_init;
+    float qos_para;
+    static int n = 0;
 
-    ++(*tasknum);
+    taskid_init = sys->Task.taskid_init;
+    tasknum = sys->Task.tasknum;
+    qos_para = sys->Task.qos_para;
+
+    if(n > tasknum){
+        printf("!WARNING:Task Number Extra.\n");
+        return;
+    }
+
+    task[n].coo.x = coox;
+    task[n].coo.y = cooy;
+    task[n].res_cost = res_cost;
+    setQoS(&task[n], qos_para);
+    task[n].id = taskid_init + n;
+    task[n].execv_node = NONEID;
+    task[n].state = STANDING;
+    task[n].trans_flag = 0;
+    task[n].relatedgroup = (int *)malloc(tasknum * sizeof(int));
+    printf("Task:%d Initialize Success.\n", task[n].id );
+
+    ++n;
 }
 
+/**< Set Task Array */
+static void setTaskArray(int arraynum, SystemPara *sys, Task *task, int coox, int cooy, float *res_cost)
+{
+    int i;
+
+    for(i = 0; i < (3*arraynum); ++i)
+    {
+        switch(i%3)
+        {
+        case 0:
+            setTask(sys, task, coox, cooy, res_cost[0]);
+            break;
+        case 1:
+            setTask(sys, task, coox, cooy, res_cost[1]);
+            break;
+        case 2:
+            setTask(sys, task, coox, cooy, res_cost[2]);
+            break;
+        default:
+            break;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 /** \brief 系统全局参数配置
  *
  * \author lq
- * \update 141222
+ * \update 150101
  * \return
  *
  */
@@ -17,9 +17,11 @@
 #include "readconfig.h"
 
 static int fileconfig( SystemPara *sys );
-static int defaultconfig( SystemPara *sys );
+static void defaultconfig( SystemPara *sys );
+static void setSyspara_int(FileBuf *buf, char *keyname, int *para, int *res);
+static void setSyspara_float(FileBuf *buf, char *keyname, float *para, int *res);
 
-/**< 系统全局参数初始化 */
+/**< System Initial */
 int SystemInit(SystemPara *sys)
 {
     int ret;
@@ -37,120 +39,53 @@ int SystemInit(SystemPara *sys)
 static int fileconfig( SystemPara *sys )
 {
     FileBuf buf[CONFIGNUM];
-    int i,ret[CONFIGNUM],location,res;
+    int res = 1;
 
-     /* 读配置文件 */
-    res = readfile("config.ini", buf);
-    if(res) {
+     /* read config.ini to buf */
+    int ret = readfile("config.ini", buf);
+    if(ret) {
         printf("readfile error.\n");
-        return -1;
+        return 1;
     }
-    res = 1;
-    /* File */
-    ret[0] = prasebuffer( "writecycle_cmmu", &location, buf);
-    if(ret[0])
-        sys->writecycle_cmmu = atoi(buf[location].keyvalue);
-    ret[1] = prasebuffer( "writecycle_instantc", &location, buf);
-    if(ret[1])
-        sys->writecycle_instantc = atoi(buf[location].keyvalue);
-    ret[2] = prasebuffer( "writecycle_strength", &location, buf);
-    if(ret[2])
-        sys->writecycle_strength = atoi(buf[location].keyvalue);
 
-    /* Map */
-    ret[3] = prasebuffer( "crossnum", &location, buf);
-    if(ret[3])
-        sys->Map.crossnum = atoi(buf[location].keyvalue);
-    ret[4] = prasebuffer( "crossid_init", &location, buf);
-    if(ret[4])
-        sys->Map.crossid_init = atoi(buf[location].keyvalue);
-    ret[5] = prasebuffer( "x_max", &location, buf);
-    if(ret[5])
-        sys->Map.x_max = atoi(buf[location].keyvalue);
-    ret[6] = prasebuffer( "y_max", &location, buf);
-    if(ret[6])
-        sys->Map.y_max = atoi(buf[location].keyvalue);
-
-    /* Object */
-    ret[7] = prasebuffer( "objectnum", &location, buf);
-    if(ret[7])
-        sys->Object.objectnum = atoi(buf[location].keyvalue);
-    ret[8] = prasebuffer( "objectid_init", &location, buf);
-    if(ret[8])
-        sys->Object.objectid_init = atoi(buf[location].keyvalue);
-    ret[9] = prasebuffer( "speed0", &location, buf);
-    if(ret[9])
-        sys->Object.speed[0] = atof(buf[location].keyvalue);
-    ret[10] = prasebuffer( "speed1", &location, buf);
-    if(ret[10])
-        sys->Object.speed[1] = atof(buf[location].keyvalue);
-
-    /* Node */
-    ret[11] = prasebuffer( "nodenum", &location, buf);
-    if(ret[11])
-        sys->Node.nodenum = atoi(buf[location].keyvalue);
-    ret[12] = prasebuffer( "nodeid_init", &location, buf);
-    if(ret[12])
-        sys->Node.nodeid_init = atoi(buf[location].keyvalue);
-    ret[13] = prasebuffer( "feedbackcost", &location, buf);
-    if(ret[13])
-        sys->Node.feedbackcost = atof(buf[location].keyvalue);
-    ret[14] = prasebuffer( "taskcost", &location, buf);
-    if(ret[14])
-        sys->Node.taskcost = atof(buf[location].keyvalue);
-    ret[15] = prasebuffer( "strengthinit", &location, buf);
-    if(ret[15])
-        sys->Node.strengthinit = atof(buf[location].keyvalue);
-    ret[16] = prasebuffer( "strengthincre", &location, buf);
-    if(ret[16])
-        sys->Node.strengthincre = atof(buf[location].keyvalue);
-    ret[17] = prasebuffer( "strengthratio", &location, buf);
-    if(ret[17])
-        sys->Node.strengthratio = atof(buf[location].keyvalue);
-    ret[18] = prasebuffer( "pvalue", &location, buf);
-    if(ret[18])
-        sys->Node.pvalue = atof(buf[location].keyvalue);
-    ret[19] = prasebuffer( "tvalue", &location, buf);
-    if(ret[19])
-        sys->Node.tvalue = atof(buf[location].keyvalue);
-    ret[20] = prasebuffer( "maxvalue", &location, buf);
-    if(ret[20])
-        sys->Node.maxvalue = atof(buf[location].keyvalue);
-    ret[21] = prasebuffer( "minvalue", &location, buf);
-    if(ret[21])
-        sys->Node.minvalue = atof(buf[location].keyvalue);
-    ret[22] = prasebuffer( "maxnum", &location, buf);
-    if(ret[22])
-        sys->Node.maxnum = atoi(buf[location].keyvalue);
-    ret[23] = prasebuffer( "maxload", &location, buf);
-    if(ret[23])
-        sys->Node.maxload = atof(buf[location].keyvalue);
-    ret[24] = prasebuffer( "fovhalfwidth", &location, buf);
-    if(ret[24])
-        sys->Node.fovhalfwidth = atoi(buf[location].keyvalue);
-    ret[25] = prasebuffer( "fovlength", &location, buf);
-    if(ret[25])
-        sys->Node.fovlength = atoi(buf[location].keyvalue);
-    ret[26] = prasebuffer( "commu_mode", &location, buf);
-    if(ret[26])
-        sys->Node.commu_mode = atoi(buf[location].keyvalue);
-
-    /* Task */
-    ret[27] = prasebuffer( "taskid_init", &location, buf);
-    if(ret[27])
-        sys->Task.taskid_init = atoi(buf[location].keyvalue);
-    ret[28] = prasebuffer( "tasknum", &location, buf);
-    if(ret[28])
-        sys->Task.tasknum = atoi(buf[location].keyvalue);
-    ret[29] = prasebuffer( "system_mode", &location, buf);
-    if(ret[29])
-        sys->system_mode = atoi(buf[location].keyvalue);
-    ret[30] = prasebuffer( "method_type", &location, buf);
-    if(ret[30])
-        sys->Task.method_type = atoi(buf[location].keyvalue);
-
-    for(i = 0; i < 31; i++)
-        res = res & ret[i];
+    /* prase buf and set syspara */
+    ///system
+    setSyspara_int(buf, "system_mode", &(sys->system_mode), &res);
+    setSyspara_int(buf, "writecycle_cmmu", &(sys->writecycle_cmmu), &res);
+    setSyspara_int(buf, "writecycle_instantc", &(sys->writecycle_instantc), &res);
+    setSyspara_int(buf, "writecycle_strength", &(sys->writecycle_strength), &res);
+    ///Map
+    setSyspara_int(buf, "crossnum", &(sys->Map.crossnum), &res);
+    setSyspara_int(buf, "crossid_init", &(sys->Map.crossid_init), &res);
+    setSyspara_int(buf, "x_max", &(sys->Map.x_max), &res);
+    setSyspara_int(buf, "y_max", &(sys->Map.y_max), &res);
+    ///Object
+    setSyspara_int(buf, "objectnum", &(sys->Object.objectnum), &res);
+    setSyspara_int(buf, "objectid_init", &(sys->Object.objectid_init), &res);
+    setSyspara_int(buf, "speed0", &(sys->Object.speed[0]), &res);
+    setSyspara_int(buf, "speed1", &(sys->Object.speed[1]), &res);
+    ///Node
+    setSyspara_int(buf, "nodenum", &(sys->Node.nodenum), &res);
+    setSyspara_int(buf, "nodeid_init", &(sys->Node.nodeid_init), &res);
+    setSyspara_float(buf, "feedbackcost", &(sys->Node.feedbackcost), &res);
+    setSyspara_float(buf, "taskcost", &(sys->Node.taskcost), &res);
+    setSyspara_float(buf, "strengthinit", &(sys->Node.strengthinit), &res);
+    setSyspara_float(buf, "strengthincre", &(sys->Node.strengthincre), &res);
+    setSyspara_float(buf, "strengthratio", &(sys->Node.strengthratio), &res);
+    setSyspara_float(buf, "pvalue", &(sys->Node.pvalue), &res);
+    setSyspara_float(buf, "tvalue", &(sys->Node.tvalue), &res);
+    setSyspara_float(buf, "maxvalue", &(sys->Node.maxvalue), &res);
+    setSyspara_float(buf, "minvalue", &(sys->Node.minvalue), &res);
+    setSyspara_float(buf, "maxload", &(sys->Node.maxload), &res);
+    setSyspara_int(buf, "maxnum", &(sys->Node.maxnum), &res);
+    setSyspara_int(buf, "fovhalfwidth", &(sys->Node.fovhalfwidth), &res);
+    setSyspara_int(buf, "fovlength", &(sys->Node.fovlength), &res);
+    setSyspara_int(buf, "commu_mode", &(sys->Node.commu_mode), &res);
+    ///Task
+    setSyspara_int(buf, "taskid_init", &(sys->Task.taskid_init), &res);
+    setSyspara_int(buf, "tasknum", &(sys->Task.tasknum), &res);
+    setSyspara_int(buf, "method_type", &(sys->Task.method_type), &res);
+    setSyspara_float(buf, "qos_para", &(sys->Task.qos_para), &res);
 
     if(res)
         return 0;
@@ -158,7 +93,7 @@ static int fileconfig( SystemPara *sys )
         return 1;
 }
 
-static int defaultconfig( SystemPara *sys )
+static void defaultconfig( SystemPara *sys )
 {
     sys->system_mode = TRACK_MODE;      //系统运行模式
     /* File */
@@ -196,9 +131,35 @@ static int defaultconfig( SystemPara *sys )
     sys->Task.taskid_init = 10001;      //任务ID起始编号
     sys->Task.tasknum = 6;              //任务总数
     sys->Task.method_type = METHOD_TQTA;//TQTA方法
-    return 0;
+    sys->Task.qos_para = 0.9;           //QoS参数
 }
 
+/**< prasebuffer from buf, write to para */
+static void setSyspara_int(FileBuf *buf, char *keyname, int *para, int *res)
+{
+    int location, ret;
+
+    ret = prasebuffer(keyname, &location, buf);
+    if(ret)
+        *para = atoi(buf[location].keyvalue);
+    else
+        printf("prasebuffer error: ", *keyname, "\n");
+
+    *res = (*res) & ret;
+}
+
+static void setSyspara_float(FileBuf *buf, char *keyname, float *para, int *res)
+{
+    int location, ret;
+
+    ret = prasebuffer(keyname, &location, buf);
+    if(ret)
+        *para = atof(buf[location].keyvalue);
+    else
+        printf("prasebuffer error: ", *keyname, "\n");
+
+    *res = (*res) & ret;
+}
 
 
 

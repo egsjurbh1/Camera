@@ -60,6 +60,7 @@ typedef struct TaskParametersStruct
     int tasknum;                  //目标数量
     int taskid_init;              //目标ID起始编号
     int method_type;              //任务分配方法
+    float qos_para;               //QoS参数
 }TaskPara;
 
 /* 系统参数结构体 */

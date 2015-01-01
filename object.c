@@ -22,67 +22,27 @@ static int moveto( MapFrame *mapf, Object *obj, MapCoo *nextco, int mapx, int ma
 static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy);
 static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys );
 static void active_move( Object *obj, MapFrame *mapf, Cross *cross, SystemPara *sys );
+static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int route);
 
 /***************************************************************
 *   目标初始化函数
 *****/
 int ObjectInit( Object *obj, SystemPara *sys )
 {
-    int i;
-    int objectnum_init,objectnum,systemmode;
-    objectnum = sys->Object.objectnum;
-    objectnum_init = sys->Object.objectid_init;
-    systemmode = sys->system_mode;
+    int systemmode = sys->system_mode;
 
     //非跟踪模式
     if( systemmode != TRACK_MODE)
         return 0;
 
-    //初始化参数
-    for( i = 0; i < objectnum; i++)
-    {
-        obj[i].objectid = objectnum_init + i;
-        obj[i].speed = sys->Object.speed[0];
-        obj[i].distance = 0;
-        printf("Object:%d Initialize Success.\n", obj[i].objectid );
-    }
-    obj[0].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[0].coo.x = 90;
-    obj[0].coo.y = 25;
-    obj[0].direction = EAST;
-    obj[0].route = RMODE_A;
-    obj[1].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[1].coo.x = 70;
-    obj[1].coo.y = 25;
-    obj[1].route = RMODE_B;
-    obj[2].mode = PASSIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[2].coo.x = 25;
-    obj[2].coo.y = 10;
-    obj[2].route = RMODE_C;
-    obj[3].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[3].coo.x = 90;
-    obj[3].coo.y = 25;
-    obj[3].direction = EAST;
-    obj[4].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[4].coo.x = 90;
-    obj[4].coo.y = 25;
-    obj[4].direction = WEST;
-    obj[5].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[5].coo.x = 75;
-    obj[5].coo.y = 30;
-    obj[5].direction = NORTH;
-    obj[6].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[6].coo.x = 75;
-    obj[6].coo.y = 10;
-    obj[6].direction = SOUTH;
-    obj[7].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[7].coo.x = 25;
-    obj[7].coo.y = 10;
-    obj[7].direction = SOUTH;
-    obj[8].mode = ACTIVEMODE;      //PASSIVEMODE, ACTIVEMODE
-    obj[8].coo.x = 25;
-    obj[8].coo.y = 30;
-    obj[8].direction = NORTH;
+    //设置目标参数
+    setObject( sys, obj, PASSIVEMODE, 91, 25, EAST, RMODE_A);
+    setObject( sys, obj, PASSIVEMODE, 92, 25, EAST, RMODE_B);
+    setObject( sys, obj, PASSIVEMODE, 93, 25, WEST, RMODE_C);
+    setObject( sys, obj, PASSIVEMODE, 94, 25, EAST, RMODE_A);
+    setObject( sys, obj, PASSIVEMODE, 95, 25, EAST, RMODE_B);
+    setObject( sys, obj, PASSIVEMODE, 96, 25, SOUTH, RMODE_C);
+
     return 0;
 }
 
@@ -423,5 +383,32 @@ static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy)
         return 0;
 
     return 1;
+}
+
+/**< Set Object */
+static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int route)
+{
+    int objectnum_init,objectnum;
+    static int n = 0;
+
+    objectnum = sys->Object.objectnum;
+    objectnum_init = sys->Object.objectid_init;
+
+    if(n > objectnum){
+        printf("!WARNING:Object Number Extra.\n");
+        return;
+    }
+
+    obj[n].mode = mode;      //PASSIVEMODE, ACTIVEMODE
+    obj[n].coo.x = coox;
+    obj[n].coo.y = cooy;
+    obj[n].direction = direction;
+    obj[n].route = route;
+    obj[n].objectid = objectnum_init + n;
+    obj[n].speed = sys->Object.speed[0];
+    obj[n].distance = 0;
+    printf("Object:%d Initialize Success.\n", obj[n].objectid );
+
+    ++n;
 }
 

@@ -33,7 +33,7 @@ int readfile( char *filename, FileBuf *buf)
 
 	while( (c = fgetc(fp)) != EOF )
     {
-        if( c == '#' ) {    //×¢ÊÍ
+        if( c == '#' ) {    //comments
             if(bannotaion)
                 bannotaion = 0;
             else
