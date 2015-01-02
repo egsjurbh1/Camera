@@ -1,6 +1,6 @@
-/** \brief 配置文件读取和解析
+/** \brief Read & Prase File
  *
- * \author lq
+ * \author chinglee
  * \update 141204
  * \return
  *

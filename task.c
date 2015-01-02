@@ -1,6 +1,6 @@
-/** \brief ÈÎÎñ·ÖÅä
+/** \brief Task Allocation
  *
- * \author lq
+ * \author chinglee
  * \update 150101
  * \return
  *
@@ -30,7 +30,6 @@ static void setTaskArray(int arraynum, SystemPara *sys, Task *task, int coox, in
 *****/
 int TaskInit( Task *task, SystemPara *sys )
 {
-    //float rescostarray[10];
     int sysmode = sys->system_mode;
 
     if(sysmode != TASK_MODE)

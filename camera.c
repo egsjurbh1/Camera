@@ -1,7 +1,7 @@
-/** \brief 摄像头节点
+/** \brief Camera Node Control
  *
- * \author lq
- * \update 141223
+ * \author chinglee
+ * \update 150102
  * \return
  *
  */
@@ -18,15 +18,15 @@
 static void NodeMsgThread(void *arg);       //节点反馈消息处理线程
 static void NodeTaskThread(void *arg);      //节点任务消息处理线程
 static void ObjcetDetectThread(void *arg);  //节点目标检测线程
-
 static void check_nodemsg(Node *node, SystemPara *sys);
 static void check_taskmsg( Node *node, SystemPara *sys);
 static void ObjcetDetect( Node *node, Object *obj, SystemPara *sys );
 static void post_task( Node *node, int i, SystemPara *sys );
 static int isinfov( Node *node, Object *obj);
 static int countUtility( Node *node, Object *obj, float *obju );
-static void node_pos_cfg(Node *node, Cross *cross, int mode);
 float count_communication(int flag, int type, float *ic, float taskcost, float feedbackcost);
+static void setNode(SystemPara *sys, Node *node, MapCoo coo, int direction);
+static void setNodeArray(int array_n, SystemPara *sys, Node *node, Cross *cross);
 
 /**< 线程通信全局量 */
 /*NodeMsg[i][j]存储节点j发给节点i的消息*/
@@ -41,68 +41,33 @@ static volatile TaskInfo TaskMsg[MAXNODE][MAXOBJECT];
 int CameraInit(Node *node, Cross *cross, SystemPara *sys)
 {
     int i,j,ret;
-    int nodenum,objectnum,commu_mode,fovhalfwidth,fovlength,firstnodeid,tasknum,systemmode;
-    float strengthinit;
+    int systemmode, nodenum, objectnum;
 
     /* 取系统参数 */
+    systemmode = sys->system_mode;
     nodenum = sys->Node.nodenum;
     objectnum = sys->Object.objectnum;
-    commu_mode = sys->Node.commu_mode;
-    fovhalfwidth = sys->Node.fovhalfwidth;
-    fovlength = sys->Node.fovlength;
-    firstnodeid = sys->Node.nodeid_init;
-    strengthinit = sys->Node.strengthinit;
-    tasknum = sys->Task.tasknum;
-    systemmode = sys->system_mode;
-    /* NodeMsg消息初始化 */
-    for( i = 0; i < nodenum; i++)
-        for( j = 0; j < nodenum; j++)
-            NodeMsg[i][j] = NONEA;
-    /* TaskMsg消息初始化 */
-    for( i = 0; i < objectnum; i++)
-        for( j = 0; j < nodenum; j++) {
-            TaskMsg[i][j].tasktype = NONEA;
-            TaskMsg[i][j].nodeid = NONEID;
-        }
-
-    /* 摄像头节点参数初始化*/
-    for( i = 0; i < nodenum; i++, firstnodeid++) {
-        node[i].nodeid = firstnodeid;   //节点ID,增量为1
-        node[i].commu_mode = commu_mode;
-        node[i].load = 0;
-        node[i].tasknum = 0;
-        node[i].utility = 0;
-        node[i].fovhalfwidth = fovhalfwidth;
-        node[i].fovlength = fovlength;
-
-        //邻接表关系强度
-        node[i].rstrength = (float *)malloc(nodenum * sizeof(float));
-        for( j = 0; j < nodenum; j++)
-            node[i].rstrength[j] = strengthinit;
-        //目标集
-        node[i].SdetectO = (TaskSet *)malloc( objectnum * sizeof(TaskSet));
-        node[i].StrackO = (TaskSet *)malloc( objectnum * sizeof(TaskSet));
-        for( j = 0; j < objectnum; j++) {
-            node[i].SdetectO[j].objectid = NONEID;
-            node[i].SdetectO[j].postnodeid = NONEID;
-            node[i].StrackO[j].objectid = NONEID;
-            node[i].StrackO[j].postnodeid = NONEID;
-        }
-        //任务集
-        node[i].taskid = (int *)malloc( tasknum * sizeof(int));
-        node[i].taskid[0] = 0;
-    }
 
     switch(systemmode)
     {
-        /* 跟踪模式摄像头节点位置初始化*/
+        ///跟踪模式
         case TRACK_MODE:
-            node_pos_cfg(node, cross, 4);
+            /* NodeMsg消息初始化 */
+            for( i = 0; i < nodenum; i++)
+                for( j = 0; j < nodenum; j++)
+                    NodeMsg[i][j] = NONEA;
+            /* TaskMsg消息初始化 */
+            for( i = 0; i < objectnum; i++)
+                for( j = 0; j < nodenum; j++) {
+                    TaskMsg[i][j].tasktype = NONEA;
+                    TaskMsg[i][j].nodeid = NONEID;
+                }
+            setNodeArray(1, sys, node, cross);
             ret = 1;
             break;
-        /* 任务分配模式摄像头节点位置初始化 */
+        ///任务分配模式
         case TASK_MODE:
-            node_pos_cfg(node, cross, 1);
+            setNodeArray(2, sys, node, cross);
             ret = 1;
             break;
         default:
@@ -484,7 +449,7 @@ static int isinfov( Node *node, Object *obj)
 {
     switch(node->direction){
     case NORTH:
-        if(obj->coo.y >= node->coo.y && obj->coo.x <= (node->coo.y + node->fovlength) &&
+        if(obj->coo.y >= node->coo.y && obj->coo.y <= (node->coo.y + node->fovlength) &&
            obj->coo.x <= (node->coo.x + node->fovhalfwidth) && obj->coo.x >= (node->coo.x - node->fovhalfwidth))
             return 1;
         else
@@ -570,164 +535,91 @@ static int countUtility( Node *node, Object *obj, float *obju )
     return 0;
 }
 
-/**< 节点位置配置 */
-static void node_pos_cfg(Node *node, Cross *cross, int mode)
+/**< 节点配置 */
+static void setNode(SystemPara *sys, Node *node, MapCoo coo, int direction)
 {
-    switch(mode)
+    int i,nodenum,objectnum,commu_mode,fovhalfwidth,fovlength,firstnodeid,tasknum;
+    float strengthinit;
+    static int n = 0;
+    nodenum = sys->Node.nodenum;
+    objectnum = sys->Object.objectnum;
+    commu_mode = sys->Node.commu_mode;
+    fovhalfwidth = sys->Node.fovhalfwidth;
+    fovlength = sys->Node.fovlength;
+    firstnodeid = sys->Node.nodeid_init;
+    strengthinit = sys->Node.strengthinit;
+    tasknum = sys->Task.tasknum;
+
+    if(n > nodenum){
+        printf("!WARNING:Object Number Extra.\n");
+        return;
+    }
+
+    node[n].nodeid = firstnodeid + n;   //节点ID,增量为1
+    node[n].commu_mode = commu_mode;
+    node[n].load = 0;
+    node[n].tasknum = 0;
+    node[n].utility = 0;
+    node[n].fovhalfwidth = fovhalfwidth;
+    node[n].fovlength = fovlength;
+
+    //邻接表关系强度
+    node[n].rstrength = (float *)malloc(nodenum * sizeof(float));
+    for( i = 0; i < nodenum; i++)
+        node[n].rstrength[i] = strengthinit;
+    //目标集
+    node[n].SdetectO = (TaskSet *)malloc( objectnum * sizeof(TaskSet));
+    node[n].StrackO = (TaskSet *)malloc( objectnum * sizeof(TaskSet));
+    for( i = 0; i < objectnum; i++) {
+        node[n].SdetectO[i].objectid = NONEID;
+        node[n].SdetectO[i].postnodeid = NONEID;
+        node[n].StrackO[i].objectid = NONEID;
+        node[n].StrackO[i].postnodeid = NONEID;
+    }
+    //任务集
+    node[n].taskid = (int *)malloc( tasknum * sizeof(int));
+    node[n].taskid[0] = 0;
+    //位置
+    node[n].coo.x = coo.x;
+    node[n].coo.y = coo.y;
+    node[n].direction = direction;
+
+    ++n;
+}
+
+/**< 节点组配置 */
+static void setNodeArray(int array_n, SystemPara *sys, Node *node, Cross *cross)
+{
+    int i;
+    MapCoo c1_north, c1_south, c1_east, c1_west, c2_north, c2_south, c2_east, c2_west;
+
+    /* 路口方位坐标 */
+    c1_north.x = c1_south.x = cross[0].coo.x;
+    c1_north.y = cross[0].coo.y + cross[0].halfwidth;
+    c1_south.y = cross[0].coo.y - cross[0].halfwidth;
+    c1_east.x = cross[0].coo.x + cross[0].halfwidth;
+    c1_west.x = cross[0].coo.x - cross[0].halfwidth;
+    c1_east.y = c1_west.y = cross[0].coo.y;
+
+    c2_north.x = c2_south.x = cross[1].coo.x;
+    c2_north.y = cross[1].coo.y + cross[1].halfwidth;
+    c2_south.y = cross[1].coo.y - cross[1].halfwidth;
+    c2_east.x = cross[1].coo.x + cross[1].halfwidth;
+    c2_west.x = cross[1].coo.x - cross[1].halfwidth;
+    c2_east.y = c2_west.y = cross[1].coo.y;
+
+    for(i = 0; i < array_n; ++i)
     {
-    case 1: /* 节点位置配置，模式一：每个道路2个，交叉路口8个 */
-        //节点C1(路口2 西)
-        node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
-        node[0].coo.y = cross[1].coo.y;
-        node[0].direction = WEST;
-        //节点C2(路口1 东)
-        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[1].coo.y = cross[0].coo.y;
-        node[1].direction = EAST;
-        //节点C3(路口1 北)
-        node[2].coo.x = cross[0].coo.x;
-        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
-        node[2].direction = NORTH;
-        //节点C4(路口1 西)
-        node[3].coo.x = cross[0].coo.x - cross[0].halfwidth;
-        node[3].coo.y = cross[0].coo.y;
-        node[3].direction = WEST;
-        //节点C5(路口1 南)
-        node[4].coo.x = cross[0].coo.x;
-        node[4].coo.y = cross[0].coo.y - cross[0].halfwidth;
-        node[4].direction = SOUTH;
-        //节点C6(路口2 北)
-        node[5].coo.x = cross[1].coo.x;
-        node[5].coo.y = cross[1].coo.y + cross[1].halfwidth;
-        node[5].direction = NORTH;
-        //节点C7(路口2 东)
-        node[6].coo.x = cross[1].coo.x + cross[1].halfwidth;
-        node[6].coo.y = cross[1].coo.y;
-        node[6].direction = EAST;
-        //节点C8(路口2 南)
-        node[7].coo.x = cross[1].coo.x;
-        node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
-        node[7].direction = SOUTH;
-        //节点C9(路口2 西)
-        node[8].coo.x = cross[1].coo.x - cross[1].halfwidth;
-        node[8].coo.y = cross[1].coo.y;
-        node[8].direction = WEST;
-        //节点C10(路口1 东)
-        node[9].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[9].coo.y = cross[0].coo.y;
-        node[9].direction = EAST;
-        //节点C11(路口1 北)
-        node[10].coo.x = cross[0].coo.x;
-        node[10].coo.y = cross[0].coo.y + cross[0].halfwidth;
-        node[10].direction = NORTH;
-        //节点C12(路口1 西)
-        node[11].coo.x = cross[0].coo.x - cross[0].halfwidth;
-        node[11].coo.y = cross[0].coo.y;
-        node[11].direction = WEST;
-        //节点C13(路口1 南)
-        node[12].coo.x = cross[0].coo.x;
-        node[12].coo.y = cross[0].coo.y - cross[0].halfwidth;
-        node[12].direction = SOUTH;
-        //节点C14(路口2 北)
-        node[13].coo.x = cross[1].coo.x;
-        node[13].coo.y = cross[1].coo.y + cross[1].halfwidth;
-        node[13].direction = NORTH;
-        //节点C15(路口2 东)
-        node[14].coo.x = cross[1].coo.x + cross[1].halfwidth;
-        node[14].coo.y = cross[1].coo.y;
-        node[14].direction = EAST;
-        //节点C16(路口2 南)
-        node[15].coo.x = cross[1].coo.x;
-        node[15].coo.y = cross[1].coo.y - cross[1].halfwidth;
-        node[15].direction = SOUTH;
-        break;
-    case 2: /* 节点位置配置，模式二：含视域重合 */
-        //节点C1(路口1 东)
-        node[0].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[0].coo.y = cross[0].coo.y;
-        node[0].direction = EAST;
-        //节点C2(路口1 东)
-        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[1].coo.y = cross[0].coo.y;
-        node[1].direction = EAST;
-        //节点C3(路口1 北)
-        node[2].coo.x = cross[0].coo.x;
-        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
-        node[2].direction = NORTH;
-        //节点C4(路口1 北)
-        node[3].coo.x = cross[0].coo.x;
-        node[3].coo.y = cross[0].coo.y + cross[0].halfwidth;
-        node[3].direction = NORTH;
-        //节点C5(路口1 西)
-        node[4].coo.x = cross[0].coo.x - cross[0].halfwidth;
-        node[4].coo.y = cross[0].coo.y;
-        node[4].direction = WEST;
-        //节点C6(路口1 西)
-        node[5].coo.x = cross[0].coo.x - cross[0].halfwidth;
-        node[5].coo.y = cross[0].coo.y;
-        node[5].direction = WEST;
-        //节点C7(路口1 南)
-        node[6].coo.x = cross[0].coo.x;
-        node[6].coo.y = cross[0].coo.y - cross[0].halfwidth;
-        node[6].direction = SOUTH;
-        //节点C8(路口1 南)
-        node[7].coo.x = cross[0].coo.x;
-        node[7].coo.y = cross[0].coo.y - cross[0].halfwidth;
-        node[7].direction = SOUTH;
-        break;
-    case 3: /* 节点位置配置，模式三：场景一四节点监控一条道路 */
-        //节点C1(路口1 东)
-        node[0].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[0].coo.y = cross[0].coo.y;
-        node[0].direction = EAST;
-        //节点C2(路口1 东)
-        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[1].coo.y = cross[0].coo.y;
-        node[1].direction = EAST;
-        //节点C3(路口1 东)
-        node[2].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[2].coo.y = cross[0].coo.y;
-        node[2].direction = EAST;
-        //节点C4(路口1 东)
-        node[3].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[3].coo.y = cross[0].coo.y;
-        node[3].direction = EAST;
-        break;
-    case 4:
-        //节点C1(路口2 西)
-        node[0].coo.x = cross[1].coo.x - cross[1].halfwidth;
-        node[0].coo.y = cross[1].coo.y;
-        node[0].direction = WEST;
-        //节点C2(路口1 东)
-        node[1].coo.x = cross[0].coo.x + cross[0].halfwidth;
-        node[1].coo.y = cross[0].coo.y;
-        node[1].direction = EAST;
-        //节点C3(路口1 北)
-        node[2].coo.x = cross[0].coo.x;
-        node[2].coo.y = cross[0].coo.y + cross[0].halfwidth;
-        node[2].direction = NORTH;
-        //节点C4(路口1 西)
-        node[3].coo.x = cross[0].coo.x - cross[0].halfwidth;
-        node[3].coo.y = cross[0].coo.y;
-        node[3].direction = WEST;
-        //节点C5(路口1 南)
-        node[4].coo.x = cross[0].coo.x;
-        node[4].coo.y = cross[0].coo.y - cross[0].halfwidth;
-        node[4].direction = SOUTH;
-        //节点C6(路口2 北)
-        node[5].coo.x = cross[1].coo.x;
-        node[5].coo.y = cross[1].coo.y + cross[1].halfwidth;
-        node[5].direction = NORTH;
-        //节点C7(路口2 东)
-        node[6].coo.x = cross[1].coo.x + cross[1].halfwidth;
-        node[6].coo.y = cross[1].coo.y;
-        node[6].direction = EAST;
-        //节点C8(路口2 南)
-        node[7].coo.x = cross[1].coo.x;
-        node[7].coo.y = cross[1].coo.y - cross[1].halfwidth;
-        node[7].direction = SOUTH;
-        break;
-    default:
-        break;
+        //一组配置2个路口的四个方位共八个点
+        setNode( sys, node, c1_north, NORTH);
+        setNode( sys, node, c1_south, SOUTH);
+        setNode( sys, node, c1_west, WEST);
+        setNode( sys, node, c1_east, EAST);
+        setNode( sys, node, c2_north, NORTH);
+        setNode( sys, node, c2_south, SOUTH);
+        setNode( sys, node, c2_west, WEST);
+        setNode( sys, node, c2_east, EAST);
     }
 }
+
+

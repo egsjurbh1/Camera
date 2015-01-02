@@ -1,8 +1,8 @@
 /** \brief Camera Networks Software Framework
  *
  * \author chinglee
- * \update 150101
- * \version v1.3.8
+ * \update 150102
+ * \version v1.4.0
  * \notice
  */
 

@@ -1,7 +1,7 @@
-/** \brief 运动目标
+/** \brief Object Movement
  *
- * \author lq
- * \update 141222
+ * \author chinglee
+ * \update 150102
  * \return
  *
  */
@@ -19,10 +19,9 @@ static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy);
 static void MoveModeThread( void *arg );
 static int find_direction(Object *obj);
 static int moveto( MapFrame *mapf, Object *obj, MapCoo *nextco, int mapx, int mapy );
-static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy);
 static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys );
 static void active_move( Object *obj, MapFrame *mapf, Cross *cross, SystemPara *sys );
-static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int route);
+static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int (*route)[2], int r_size);
 
 /***************************************************************
 *   目标初始化函数
@@ -30,18 +29,22 @@ static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy
 int ObjectInit( Object *obj, SystemPara *sys )
 {
     int systemmode = sys->system_mode;
+    int route_a[][2] = {{90,25},{75,25},{75,40},{75,25},{25,25},{25,40},{25,25},{10,25},{25,25},{25,10},{25,25},{75,25},{75,10},{75,25},{90,25}};
+    int route_b[][2] = {{10,25},{25,25},{25,40},{25,25},{75,25},{75,40},{75,25},{90,25},{75,25},{75,10},{75,25},{25,25},{25,10},{25,25},{10,25}};
+    int route_c[][2] = {{10,25},{90,25},{10,25}};
+    int route_d[][2] = {{25,10},{25,40},{25,10}};
+    int route_e[][2] = {{75,4},{75,46},{75,4}};
 
     //非跟踪模式
-    if( systemmode != TRACK_MODE)
+    if( systemmode != TRACK_MODE )
         return 0;
 
     //设置目标参数
-    setObject( sys, obj, PASSIVEMODE, 91, 25, EAST, RMODE_A);
-    setObject( sys, obj, PASSIVEMODE, 92, 25, EAST, RMODE_B);
-    setObject( sys, obj, PASSIVEMODE, 93, 25, WEST, RMODE_C);
-    setObject( sys, obj, PASSIVEMODE, 94, 25, EAST, RMODE_A);
-    setObject( sys, obj, PASSIVEMODE, 95, 25, EAST, RMODE_B);
-    setObject( sys, obj, PASSIVEMODE, 96, 25, SOUTH, RMODE_C);
+    setObject( sys, obj, PASSIVEMODE, 95, 25, EAST, route_a, sizeof(route_a));
+    setObject( sys, obj, PASSIVEMODE, 5, 25, EAST, route_b, sizeof(route_b));
+    setObject( sys, obj, PASSIVEMODE, 5, 25, EAST, route_c, sizeof(route_c));
+    setObject( sys, obj, PASSIVEMODE, 25, 5, EAST, route_d, sizeof(route_d));
+    setObject( sys, obj, PASSIVEMODE, 75, 5, EAST, route_e, sizeof(route_e));
 
     return 0;
 }
@@ -94,7 +97,7 @@ void ObjectMovement( MapFrame *mapf, Cross *cross, Object *obj, SystemPara *sys 
 }
 
 /*************************************
-*   目标运动线程
+*   目标运动线程处理函数
 *************************************/
 static void MoveModeThread( void *arg )
 {
@@ -246,74 +249,26 @@ static int find_direction(Object *obj)
  */
 static void passive_move( Object *obj, MapFrame *mapf, SystemPara *sys )
 {
-    int routemode;
-    int mapx,mapy;
+    int i, m, mapx, mapy;
+    int route[MAXROUTE][2];
+    MapCoo nextco;
 
-    routemode = obj->route;
     mapx = sys->Map.x_max;
     mapy = sys->Map.y_max;
+    m = (obj->r_size) / sizeof(int) / 2;
+    memcpy(route, obj->route, obj->r_size);
 
     printf("Object:%d, Start POS:(%d, %d)\n", obj->objectid, obj->coo.x, obj->coo.y);
     //路径引导
-    if(route(routemode, obj, mapf, mapx, mapy)) {
-        printf("Error:Object %d route failed.\n", obj->objectid);
-        exit(1);
+    for(i = 0; i < m; ++i)
+    {
+        nextco.x = route[i][0];
+        nextco.y = route[i][1];
+        if(!moveto( mapf, obj, &nextco, mapx, mapy ))
+            break;
+        if(i == (m-1))
+            i = 0;
     }
-}
-
-/** \brief Route路径函数
- *
- * \param
- * \param
- * \return
- *
- */
-static int route(int mode, Object *obj, MapFrame *mapf, int mapx, int mapy)
-{
-    int i,m;
-    int mc_a[9][2] = {{75,25},{25,25},{25,48},{25,25},{1,25},{25,25},{25,1},{25,25},{75,25}};
-    int mc_b[3][2] = {{75,25},{1,25},{75,25}};
-    int mc_c[3][2] = {{25,1},{25,49},{25,1}};
-    MapCoo nextco;
-
-    switch(mode){
-    case RMODE_A:
-        m = sizeof(mc_a)/sizeof(int)/2;
-        for(i = 0; i < m; ++i) {
-            nextco.x = mc_a[i][0];
-            nextco.y = mc_a[i][1];
-            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
-                break;
-            if(i == (m-1))
-                i = 0;
-        }
-        break;
-    case RMODE_B:
-        m = sizeof(mc_b)/sizeof(int)/2;
-        for(i = 0; i < m; ++i) {
-            nextco.x = mc_b[i][0];
-            nextco.y = mc_b[i][1];
-            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
-                break;
-            if(i == (m-1))
-                i = 0;
-        }
-        break;
-     case RMODE_C:
-        m = sizeof(mc_c)/sizeof(int)/2;
-        for(i = 0; i < m; ++i) {
-            nextco.x = mc_c[i][0];
-            nextco.y = mc_c[i][1];
-            if(!moveto( mapf, obj, &nextco, mapx, mapy ))
-                break;
-            if(i == (m-1))
-                i = 0;
-        }
-        break;
-    default:
-        break;
-    }
-    return 0;
 }
 
 /** \brief Moveto定点移动函数
@@ -386,7 +341,7 @@ static int check_pos_valid(MapFrame *mapf, int x, int y, int mapx, int mapy)
 }
 
 /**< Set Object */
-static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int route)
+static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy, int direction, int (*route)[2], int r_size)
 {
     int objectnum_init,objectnum;
     static int n = 0;
@@ -399,15 +354,27 @@ static void setObject(SystemPara *sys, Object *obj, int mode, int coox, int cooy
         return;
     }
 
-    obj[n].mode = mode;      //PASSIVEMODE, ACTIVEMODE
+    obj[n].mode = mode;
     obj[n].coo.x = coox;
     obj[n].coo.y = cooy;
-    obj[n].direction = direction;
-    obj[n].route = route;
     obj[n].objectid = objectnum_init + n;
     obj[n].speed = sys->Object.speed[0];
     obj[n].distance = 0;
-    printf("Object:%d Initialize Success.\n", obj[n].objectid );
+
+    switch(mode)
+    {
+    case PASSIVEMODE:
+        obj[n].r_size = r_size;
+        memcpy(obj[n].route, route, r_size);
+        break;
+    case ACTIVEMODE:
+        obj[n].direction = direction;
+        break;
+    default:
+        break;
+    }
+
+    printf("Object:%d Initialize Success.\n", obj[n].objectid);
 
     ++n;
 }

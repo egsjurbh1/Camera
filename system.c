@@ -1,6 +1,6 @@
-/** \brief 系统全局参数配置
+/** \brief System Parameters Configuration
  *
- * \author lq
+ * \author chinglee
  * \update 150101
  * \return
  *
@@ -160,10 +160,3 @@ static void setSyspara_float(FileBuf *buf, char *keyname, float *para, int *res)
 
     *res = (*res) & ret;
 }
-
-
-
-
-
-
-

@@ -451,7 +451,7 @@
 	<windows.h>
 	"task.h"
 
-1420096460 source:d:\project\c\camera\camera.c
+1420185119 source:d:\project\c\camera\camera.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -471,11 +471,11 @@
 
 1420091433 d:\project\c\camera\system.h
 
-1417571849 d:\project\c\camera\object.h
+1420168180 d:\project\c\camera\object.h
 	"map.h"
 	"system.h"
 
-1420007170 source:d:\project\c\camera\general.c
+1420184863 source:d:\project\c\camera\general.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -505,7 +505,7 @@
 	<windows.h>
 	"map.h"
 
-1420091009 source:d:\project\c\camera\object.c
+1420180559 source:d:\project\c\camera\object.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -515,7 +515,7 @@
 	<windows.h>
 	"object.h"
 
-1420095776 source:d:\project\c\camera\readconfig.c
+1420185082 source:d:\project\c\camera\readconfig.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -527,7 +527,7 @@
 
 1417655857 d:\project\c\camera\readconfig.h
 
-1420095839 source:d:\project\c\camera\system.c
+1420184945 source:d:\project\c\camera\system.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -538,7 +538,7 @@
 	"system.h"
 	"readconfig.h"
 
-1420100001 source:d:\project\c\camera\task.c
+1420185095 source:d:\project\c\camera\task.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>
@@ -548,7 +548,7 @@
 	<windows.h>
 	"task.h"
 
-1420101387 source:d:\project\c\camera\main.c
+1420184782 source:d:\project\c\camera\main.c
 	<stdio.h>
 	<stdlib.h>
 	<pthread.h>

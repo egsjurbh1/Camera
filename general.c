@@ -1,6 +1,6 @@
-/** \brief Êä³ö
+/** \brief Output File
  *
- * \author lq
+ * \author chinglee
  * \update 141231
  * \return
  *
